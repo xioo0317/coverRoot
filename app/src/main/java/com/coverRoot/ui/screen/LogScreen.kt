@@ -176,7 +176,7 @@ private fun LogPlaceholder(modifier: Modifier = Modifier, miuix: Boolean) {
     val summary = stringResource(R.string.log_empty_hint)
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Column(
-            horizontalAlignment = Alignment.CenterHorically,
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.padding(32.dp),
         ) {
