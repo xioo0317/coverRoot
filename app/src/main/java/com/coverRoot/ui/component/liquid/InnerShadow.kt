@@ -92,6 +92,7 @@ private class InnerShadowNode(
 
     private var shadowLayer: GraphicsLayer? = null
     private val paint = Paint()
+    private val clipPath = Path()
     private var prevRadius = Float.NaN
 
     override fun ContentDrawScope.draw() {

@@ -38,7 +38,7 @@ import com.coverRoot.ui.navigation.Route
 import com.coverRoot.ui.navigation.rememberNavigator
 import com.coverRoot.ui.screen.MainScreen
 import com.coverRoot.ui.screen.ServerAddressScreen
-import com.coverRoot.ui.screen.appearance.AppearanceScreen
+import com.coverRoot.ui.screen.AppearanceScreen
 import com.coverRoot.ui.screen.about.AboutScreen
 import com.coverRoot.ui.theme.AppTheme
 import com.coverRoot.ui.theme.ColorMode

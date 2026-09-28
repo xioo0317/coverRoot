@@ -299,8 +299,8 @@ private fun UpdateDialog(
                     )
                 }
                 androidx.compose.foundation.layout.Spacer(Modifier.height(16.dp))
-                top.yukonga.miuix.kmp.basic.TextButton(onClick = onDismiss) {
-                    top.yukonga.miuix.kmp.basic.BasicText(stringResource(android.R.string.ok))
+                androidx.compose.material3.TextButton(onClick = onDismiss) {
+                    androidx.compose.material3.Text(stringResource(android.R.string.ok))
                 }
             }
         }
