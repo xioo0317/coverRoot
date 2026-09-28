@@ -1,5 +1,6 @@
 package com.coverRoot.data
 
+import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -8,13 +9,19 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
 
-object LocalApiService {
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
+/**
+ * Client for the on-device Local-api half (a Magisk/KernelSU module).
+ *
+ * Refactored from a singleton to a context-aware class. The base server URL is
+ * resolved from [ConfigRepository.getBackendUrl] at call time, and [execute]
+ * sends a single named action to it. This is used by the hide-app-icon setting.
+ */
+class LocalApiService(private val context: Context) {
 
-    private val jsonMedia = "application/json; charset=utf-8".toMediaType()
+    suspend fun execute(action: String): String? {
+        val baseUrl = ConfigRepository.getBackendUrl(context)
+        return sendAction(baseUrl, action)
+    }
 
     suspend fun sendAction(
         baseUrl: String,
@@ -52,4 +59,13 @@ object LocalApiService {
     suspend fun hideAppList(baseUrl: String) = sendAction(baseUrl, "hide_app_list")
     suspend fun updateKey(baseUrl: String) = sendAction(baseUrl, "update_key")
     suspend fun setHash(baseUrl: String) = sendAction(baseUrl, "set_hash")
+
+    private companion object {
+        val client = OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
+
+        val jsonMedia = "application/json; charset=utf-8".toMediaType()
+    }
 }

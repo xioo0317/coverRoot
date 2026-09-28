@@ -1,5 +1,6 @@
 package com.coverRoot.data
 
+import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -8,45 +9,61 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
 
-@Serializable
-data class UpdateInfo(
-    val version: String = "",
-    val versionCode: Int = 0,
-    val zipUrl: String = "",
-    val changelog: String = "",
-)
+/**
+ * Checks for app updates and reads their changelog.
+ *
+ * Refactored from a singleton to a context-aware class so screens can create a
+ * per-screen instance (and cache the latest [UpdateInfo]) without keeping
+ * process-global state.
+ */
+class UpdateChecker(private val context: Context) {
 
-object UpdateChecker {
-    private const val UPDATE_JSON_URL =
-        "https://raw.githubusercontent.com/xioo0317/coverRoot/main/update.json"
+    @Serializable
+    data class UpdateInfo(
+        val version: String = "",
+        val versionCode: Int = 0,
+        val zipUrl: String = "",
+        val changelog: String = "",
+    )
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.SECONDS)
-        .build()
+    private var latest: UpdateInfo? = null
 
-    private val json = Json { ignoreUnknownKeys = true }
-
-    suspend fun fetchUpdateInfo(): UpdateInfo? = withContext(Dispatchers.IO) {
-        try {
+    suspend fun checkForUpdate(): UpdateInfo? = withContext(Dispatchers.IO) {
+        val info = try {
             val request = Request.Builder().url(UPDATE_JSON_URL).build()
-            val response = client.newCall(request).execute()
+            val response = jsonClient.newCall(request).execute()
             if (response.isSuccessful) {
                 val body = response.body?.string() ?: return@withContext null
-                json.decodeFromString(UpdateInfo.serializer(), body)
-            } else null
+                Json { ignoreUnknownKeys = true }.decodeFromString(UpdateInfo.serializer(), body)
+            } else {
+                null
+            }
         } catch (e: Exception) {
             null
         }
+        latest = info
+        info
     }
+
+    suspend fun fetchChangelog(): String = latest?.changelog ?: ""
 
     suspend fun fetchChangelog(url: String): String = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder().url(url).build()
-            val response = client.newCall(request).execute()
+            val response = jsonClient.newCall(request).execute()
             if (response.isSuccessful) response.body?.string() ?: "" else ""
         } catch (e: Exception) {
             ""
         }
+    }
+
+    private companion object {
+        const val UPDATE_JSON_URL =
+            "https://raw.githubusercontent.com/xioo0317/coverRoot/main/update.json"
+
+        val jsonClient = OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
+            .build()
     }
 }
