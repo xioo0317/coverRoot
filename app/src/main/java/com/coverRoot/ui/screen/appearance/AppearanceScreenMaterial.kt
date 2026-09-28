@@ -77,8 +77,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.coverRoot.R
 import com.coverRoot.data.AppPreferences
@@ -173,7 +171,7 @@ fun AppearanceMaterial() {
                                         scope.launch { repository.setColorMode(mode.value) }
                                     }
                                 },
-                                modifier = Modifier.weight(1f).semantics { role = Role.RadioButton },
+                                modifier = Modifier.weight(1f),
                                 colors = ToggleButtonDefaults.colors(
                                     checkedContainerColor = MaterialTheme.colorScheme.primary,
                                     checkedContentColor = MaterialTheme.colorScheme.onPrimary,

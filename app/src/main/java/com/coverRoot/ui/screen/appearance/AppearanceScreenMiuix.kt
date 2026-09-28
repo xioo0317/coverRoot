@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.captionBar
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
@@ -78,7 +79,6 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Slider
-import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.TabRow
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
@@ -172,9 +172,14 @@ fun AppearanceMiuix() {
                     Card(modifier = Modifier.padding(top = 12.dp).fillMaxWidth()) {
                         SwitchPreference(
                             title = stringResource(R.string.settings_monet),
+                            summary = stringResource(R.string.settings_monet_summary),
                             startAction = {
-                                Icon(Icons.Rounded.Wallpaper, Modifier.padding(end = 6.dp),
-                                    stringResource(R.string.settings_monet), tint = colorScheme.onBackground)
+                                Icon(
+                                    imageVector = Icons.Rounded.Wallpaper,
+                                    contentDescription = null,
+                                    tint = colorScheme.onBackground,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                )
                             },
                             checked = prefs.miuixMonet,
                             onCheckedChange = { monet ->
@@ -193,10 +198,15 @@ fun AppearanceMiuix() {
                                     colorNameResIds.map { stringResource(it) }
                                 OverlayDropdownPreference(
                                     title = stringResource(R.string.settings_key_color),
+                                    summary = stringResource(R.string.settings_key_color_summary),
                                     items = items,
                                     startAction = {
-                                        Icon(Icons.Rounded.Colorize, Modifier.padding(end = 6.dp),
-                                            stringResource(R.string.settings_key_color), tint = colorScheme.onBackground)
+                                        Icon(
+                                            imageVector = Icons.Rounded.Colorize,
+                                            contentDescription = null,
+                                            tint = colorScheme.onBackground,
+                                            modifier = Modifier.padding(end = 6.dp),
+                                        )
                                     },
                                     selectedIndex = values.indexOf(prefs.keyColor).coerceAtLeast(0),
                                     onSelectedIndexChange = { i ->
@@ -208,9 +218,14 @@ fun AppearanceMiuix() {
                                         val styles = PaletteStyle.entries
                                         OverlayDropdownPreference(
                                             title = stringResource(R.string.settings_color_style),
+                                            summary = stringResource(R.string.settings_color_style_summary),
                                             startAction = {
-                                                Icon(Icons.Rounded.Style, Modifier.padding(end = 6.dp),
-                                                    stringResource(R.string.settings_color_style), tint = colorScheme.onBackground)
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Style,
+                                                    contentDescription = null,
+                                                    tint = colorScheme.onBackground,
+                                                    modifier = Modifier.padding(end = 6.dp),
+                                                )
                                             },
                                             items = styles.map { it.name },
                                             selectedIndex = styles.indexOfFirst { it.name == prefs.colorStyle }.coerceAtLeast(0),
@@ -221,9 +236,14 @@ fun AppearanceMiuix() {
                                         val specs = ColorSpec.SpecVersion.entries
                                         OverlayDropdownPreference(
                                             title = stringResource(R.string.settings_color_spec),
+                                            summary = stringResource(R.string.settings_color_spec_summary),
                                             startAction = {
-                                                Icon(Icons.Rounded.DesignServices, Modifier.padding(end = 6.dp),
-                                                    stringResource(R.string.settings_color_spec), tint = colorScheme.onBackground)
+                                                Icon(
+                                                    imageVector = Icons.Rounded.DesignServices,
+                                                    contentDescription = null,
+                                                    tint = colorScheme.onBackground,
+                                                    modifier = Modifier.padding(end = 6.dp),
+                                                )
                                             },
                                             items = specs.map { it.name },
                                             selectedIndex = specs.indexOfFirst { it.name == prefs.colorSpec }.coerceAtLeast(0),
@@ -242,8 +262,12 @@ fun AppearanceMiuix() {
                                 title = stringResource(R.string.settings_enable_blur),
                                 summary = stringResource(R.string.settings_enable_blur_summary),
                                 startAction = {
-                                    Icon(Icons.Rounded.BlurOn, Modifier.padding(end = 6.dp),
-                                        stringResource(R.string.settings_enable_blur), tint = colorScheme.onBackground)
+                                    Icon(
+                                        imageVector = Icons.Rounded.BlurOn,
+                                        contentDescription = null,
+                                        tint = colorScheme.onBackground,
+                                        modifier = Modifier.padding(end = 6.dp),
+                                    )
                                 },
                                 checked = prefs.enableBlur,
                                 onCheckedChange = { scope.launch { repository.setEnableBlur(it) } },
@@ -252,80 +276,51 @@ fun AppearanceMiuix() {
                         AnimatedVisibility(visible = prefs.enableBlur) {
                             Column {
                                 var blurIntensity by remember(prefs.blurIntensity) { mutableFloatStateOf(prefs.blurIntensity) }
-                                ArrowPreference(
-                                    title = stringResource(R.string.settings_blur_intensity),
-                                    summary = "${blurIntensity.toInt()}",
-                                    startAction = {
-                                        Icon(Icons.Rounded.BlurOn, Modifier.padding(end = 6.dp),
-                                            stringResource(R.string.settings_blur_intensity), tint = colorScheme.onBackground)
-                                    },
-                                    endActions = {
-                                        Text("${blurIntensity.toInt()}", color = colorScheme.onSurfaceVariantActions)
-                                    },
-                                    onClick = {},
-                                    holdDownState = false,
-                                    bottomAction = {
+                                Card(modifier = Modifier.padding(top = 12.dp).fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                                        Text(
+                                            stringResource(R.string.settings_blur_intensity),
+                                            color = colorScheme.onBackground,
+                                        )
                                         Slider(
                                             value = blurIntensity,
                                             onValueChange = { blurIntensity = it },
                                             onValueChangeFinished = { scope.launch { repository.setBlurIntensity(blurIntensity) } },
                                             valueRange = 10f..60f,
                                         )
-                                    },
-                                    modifier = Modifier.padding(top = 12.dp),
-                                )
+                                    }
+                                }
                                 var blurAlpha by remember(prefs.blurAlpha) { mutableFloatStateOf(prefs.blurAlpha) }
-                                ArrowPreference(
-                                    title = stringResource(R.string.settings_blur_alpha),
-                                    summary = "${(blurAlpha * 100).toInt()}%",
-                                    startAction = {
-                                        Icon(Icons.Rounded.Colorize, Modifier.padding(end = 6.dp),
-                                            stringResource(R.string.settings_blur_alpha), tint = colorScheme.onBackground)
-                                    },
-                                    endActions = {
-                                        Text("${(blurAlpha * 100).toInt()}%", color = colorScheme.onSurfaceVariantActions)
-                                    },
-                                    onClick = {},
-                                    holdDownState = false,
-                                    bottomAction = {
+                                Card(modifier = Modifier.padding(top = 12.dp).fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                                        Text(
+                                            stringResource(R.string.settings_blur_alpha),
+                                            color = colorScheme.onBackground,
+                                        )
                                         Slider(
                                             value = blurAlpha,
                                             onValueChange = { blurAlpha = it },
                                             onValueChangeFinished = { scope.launch { repository.setBlurAlpha(blurAlpha) } },
                                             valueRange = 0.3f..1.0f,
                                         )
-                                    },
-                                    modifier = Modifier.padding(top = 12.dp),
-                                )
+                                    }
+                                }
                             }
                         }
                     }
                     Card(modifier = Modifier.padding(top = 12.dp).fillMaxWidth()) {
-                        var sliderValue by remember(prefs.pageScale) { mutableFloatStateOf(prefs.pageScale) }
                         ArrowPreference(
                             title = stringResource(R.string.settings_page_scale),
                             summary = stringResource(R.string.settings_page_scale_summary),
                             startAction = {
-                                Icon(Icons.Rounded.AspectRatio, Modifier.padding(end = 6.dp),
-                                    stringResource(R.string.settings_page_scale), tint = colorScheme.onBackground)
-                            },
-                            endActions = {
-                                Text("${(sliderValue * 100).toInt()}%", color = colorScheme.onSurfaceVariantActions)
-                            },
-                            onClick = { showScaleDialog.value = !showScaleDialog.value },
-                            holdDownState = showScaleDialog.value,
-                            bottomAction = {
-                                Slider(
-                                    value = sliderValue,
-                                    onValueChange = { sliderValue = it },
-                                    onValueChangeFinished = { scope.launch { repository.setPageScale(sliderValue) } },
-                                    valueRange = 0.8f..1.1f,
-                                    showKeyPoints = true,
-                                    keyPoints = listOf(0.8f, 0.9f, 1f, 1.1f),
-                                    magnetThreshold = 0.01f,
-                                    hapticEffect = SliderDefaults.SliderHapticEffect.Step,
+                                Icon(
+                                    imageVector = Icons.Rounded.AspectRatio,
+                                    contentDescription = null,
+                                    tint = colorScheme.onBackground,
+                                    modifier = Modifier.padding(end = 6.dp),
                                 )
                             },
+                            onClick = { showScaleDialog.value = !showScaleDialog.value },
                         )
                         ScaleDialog(
                             show = showScaleDialog.value,
@@ -364,7 +359,7 @@ private fun ThemePreviewCardMiuix(
     val seedColor = if (keyColor == 0) colorScheme.primary else Color(keyColor)
     val effectiveStyle = if (keyColor == 0) PaletteStyle.TonalSpot else style
     val effectiveSpec = if (keyColor == 0) ColorSpec.SpecVersion.Default else spec
-    val dynamicCs = rememberDynamicColorScheme(seedColor, isDark, effectiveStyle, effectiveSpec)
+    val dynamicCs = rememberDynamicColorScheme(seedColor, isDark, style = effectiveStyle, specVersion = effectiveSpec)
     val bgColor = if (miuixMonet) dynamicCs.background else colorScheme.surface
     val textColor = if (miuixMonet) dynamicCs.onSurface else colorScheme.onBackground
     val accentCardColor = when {
