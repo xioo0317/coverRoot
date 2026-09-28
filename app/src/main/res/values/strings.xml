@@ -4,6 +4,7 @@
     <string name="nav_home">Home</string>
     <string name="nav_settings">Settings</string>
     <string name="nav_about">About</string>
+    <string name="nav_tools">Tools</string>
     <string name="card_security">Security</string>
     <string name="card_device">Device</string>
     <string name="card_kernel">Kernel</string>
@@ -45,10 +46,10 @@
     <string name="color_sakura">Sakura</string>
     <string name="settings_enable_blur">Blur</string>
     <string name="settings_enable_blur_summary">Enable blur for top and bottom bars</string>
-    <string name="settings_floating_bottom_bar">Floating bottom bar</string>
-    <string name="settings_floating_bottom_bar_summary">Use a floating capsule navigation bar</string>
-    <string name="settings_enable_glass">Liquid glass</string>
-    <string name="settings_enable_glass_summary">Glass blur for the floating bottom bar</string>
+    <string name="settings_blur_intensity">Blur intensity</string>
+    <string name="settings_blur_intensity_summary">Adjust the blur radius</string>
+    <string name="settings_blur_alpha">Blur opacity</string>
+    <string name="settings_blur_alpha_summary">Adjust the blend color opacity</string>
     <string name="settings_page_scale">Page scale</string>
     <string name="settings_page_scale_summary">Adjust the global display scale</string>
     <string name="theme_system">Follow System</string>
@@ -66,14 +67,9 @@
     <string name="home_working_version">Version %1$s</string>
     <string name="about_github">GitHub Repository</string>
     <string name="about_github_summary">Open the project on GitHub</string>
-    <string name="nav_api">Features</string>
     <string name="api_server_address">Server address</string>
-
-    <!-- 日志文件页 -->
     <string name="log_empty">No logs yet</string>
     <string name="log_empty_hint">Logs will appear here once the service is running.</string>
-
-    <!-- KSU: home connectivity probe + new toggles -->
     <string name="home_not_working">Not working</string>
     <string name="home_probing">Checking…</string>
     <string name="home_probing_hint">Checking connection…</string>
@@ -84,9 +80,14 @@
     <string name="card_server">Server</string>
     <string name="settings_scroll_animation">Scrolling animation</string>
     <string name="settings_scroll_animation_summary">Enable page transition animation</string>
-    <string name="settings_predictive_back">Predictive back</string>
-    <string name="settings_predictive_back_summary">Enable predictive back gesture animation</string>
-    <string name="settings_enable_swipe_dismiss">Swipe to dismiss</string>
-    <string name="settings_enable_swipe_dismiss_summary">Swipe from the left edge to go back between pages</string>
     <string name="settings_theme_amoled">AMOLED</string>
+    <string name="settings_update">Check for updates</string>
+    <string name="settings_update_summary">Current version: v%1$s</string>
+    <string name="update_available">New version available</string>
+    <string name="update_download">Download</string>
+    <string name="update_changelog">Changelog</string>
+    <string name="update_up_to_date">You are up to date</string>
+    <string name="update_check_failed">Failed to check for updates</string>
+    <string name="settings_hide_icon">Hide app icon</string>
+    <string name="settings_hide_icon_summary">Remove app icon from launcher</string>
 </resources>

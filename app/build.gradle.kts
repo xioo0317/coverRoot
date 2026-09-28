@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.demo.themeswitch"
+    namespace = "com.coverRoot"
 
     compileSdk {
         version = release(37) {
@@ -17,11 +17,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.demo.themeswitch"
+        applicationId = "com.coverRoot"
         minSdk = 29
         targetSdk = 37
-        versionCode = 5
-        versionName = "1.3.0"
+        versionCode = 1
+        versionName = "0.0.0"
     }
 
     buildTypes {
@@ -71,23 +71,22 @@ dependencies {
 
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
-    // KSU 同款：预测性手势返回底座（navigationevent）
     implementation("androidx.navigationevent:navigationevent-compose:1.1.2")
 
-    // Miuix 全家桶（对齐 KSU 0.9.4 五模块）
     implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.4")
     implementation("top.yukonga.miuix.kmp:miuix-icons-android:0.9.4")
     implementation("top.yukonga.miuix.kmp:miuix-nav-android:0.9.4")
     implementation("top.yukonga.miuix.kmp:miuix-preference-android:0.9.4")
     implementation("top.yukonga.miuix.kmp:miuix-blur-android:0.9.4")
 
-    // Material Kolor: Monet 动态取色
     implementation("com.materialkolor:material-kolor:5.0.1")
+
+    // OkHttp for update check + Local-api
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    // Hidden API bypass for predictive back gesture
     implementation("org.lsposed.hiddenapibypass:hiddenapibypass:6.1")
 }
 
