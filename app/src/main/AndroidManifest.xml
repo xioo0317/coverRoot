@@ -7,6 +7,8 @@
 
     <!-- 调用本地 C++ 后端（POST /api/v1/execute，SSE） -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 应用内下载并安装更新 APK -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
         android:name=".app.CoverRootApp"
@@ -48,6 +50,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
+
+        <!-- 暴露下载好的更新 APK 给系统安装器 -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

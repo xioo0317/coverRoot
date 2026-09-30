@@ -14,6 +14,8 @@ data class AppPreferences(
     val enableScrollAnimation: Boolean = false,
     val enablePredictiveBack: Boolean = true,
     val enableSwipeDismiss: Boolean = true,
+    val enableNavigationBadge: Boolean = false,
+    val pagerInterceptionMode: Int = 1,
     val pageScale: Float = 1.0f,
     val blurIntensity: Float = 35f,
     val blurAlpha: Float = 0.75f,
