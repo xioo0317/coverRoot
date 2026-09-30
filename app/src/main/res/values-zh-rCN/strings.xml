@@ -45,10 +45,6 @@
     <string name="color_sakura">樱花粉</string>
     <string name="settings_enable_blur">模糊</string>
     <string name="settings_enable_blur_summary">启用顶栏和底栏的模糊效果</string>
-    <string name="settings_floating_bottom_bar">悬浮底栏</string>
-    <string name="settings_floating_bottom_bar_summary">使用悬浮式胶囊导航栏</string>
-    <string name="settings_enable_glass">液态玻璃</string>
-    <string name="settings_enable_glass_summary">为悬浮底栏启用液态玻璃效果</string>
     <string name="settings_page_scale">界面缩放</string>
     <string name="settings_page_scale_summary">调整全局界面显示比例</string>
     <string name="theme_system">跟随系统</string>
@@ -83,9 +79,29 @@
     <string name="card_server">服务器</string>
     <string name="settings_scroll_animation">滚动动画</string>
     <string name="settings_scroll_animation_summary">启用页面切换动画</string>
-    <string name="settings_predictive_back">预测性返回</string>
-    <string name="settings_predictive_back_summary">启用预测性返回手势动画</string>
-    <string name="settings_enable_swipe_dismiss">滑动返回</string>
-    <string name="settings_enable_swipe_dismiss_summary">从屏幕左缘滑动即可在页面间返回</string>
     <string name="settings_theme_amoled">AMOLED</string>
+
+    <!-- 外观：导航与手势（对齐 KernelSU） -->
+    <string name="settings_floating_bottom_bar">悬浮底栏</string>
+    <string name="settings_floating_bottom_bar_summary">将底部导航栏显示为悬浮样式</string>
+    <string name="settings_enable_glass">液态玻璃</string>
+    <string name="settings_enable_glass_summary">为悬浮底栏启用液态玻璃效果。</string>
+    <string name="settings_navigation_badge">导航徽章</string>
+    <string name="settings_navigation_badge_summary">在导航栏上显示已授权应用与已启用模块数量</string>
+    <string name="settings_enable_predictive_back">预测性返回手势</string>
+    <string name="settings_enable_predictive_back_summary">启用预测性返回手势支持。</string>
+    <string name="settings_enable_swipe_dismiss">滑动返回手势</string>
+    <string name="settings_enable_swipe_dismiss_summary">从屏幕边缘滑动即可返回上一页。</string>
+    <string name="settings_pager_gesture_mode">分页手势模式</string>
+    <string name="settings_pager_gesture_native">默认</string>
+    <string name="settings_pager_gesture_cross_axis">横向拦截</string>
+    <string name="settings_pager_gesture_ios_like">类 iOS</string>
+
+    <!-- 更新：下载与安装 -->
+    <string name="update_install">安装</string>
+    <string name="update_downloading">正在下载… %1$d%%</string>
+    <string name="update_preparing">正在准备…</string>
+    <string name="update_download_failed">下载失败</string>
+    <string name="update_install_failed">安装失败</string>
+    <string name="update_ready_to_install">已下载，点击安装</string>
 </resources>

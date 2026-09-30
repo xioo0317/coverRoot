@@ -95,4 +95,28 @@
     <string name="update_check_failed">Failed to check for updates</string>
     <string name="settings_hide_icon">Hide app icon</string>
     <string name="settings_hide_icon_summary">Remove app icon from launcher</string>
+
+    <!-- Appearance: navigation / gestures (aligned with KernelSU) -->
+    <string name="settings_floating_bottom_bar">Floating bottom bar</string>
+    <string name="settings_floating_bottom_bar_summary">Show the bottom navigation bar as a floating bar</string>
+    <string name="settings_enable_glass">Liquid glass</string>
+    <string name="settings_enable_glass_summary">Enable liquid glass effect for floating bottom bar.</string>
+    <string name="settings_navigation_badge">Navigation badge</string>
+    <string name="settings_navigation_badge_summary">Show granted app and enabled module counts on the navigation bar</string>
+    <string name="settings_enable_predictive_back">Predictive back gesture</string>
+    <string name="settings_enable_predictive_back_summary">Enable predictive back gesture support.</string>
+    <string name="settings_enable_swipe_dismiss">Swipe back gesture</string>
+    <string name="settings_enable_swipe_dismiss_summary">Swipe from the edge to return to the previous page.</string>
+    <string name="settings_pager_gesture_mode">Pager gesture mode</string>
+    <string name="settings_pager_gesture_native">Default</string>
+    <string name="settings_pager_gesture_cross_axis">Cross-axis</string>
+    <string name="settings_pager_gesture_ios_like">iOS-like</string>
+
+    <!-- Update: download & install -->
+    <string name="update_install">Install</string>
+    <string name="update_downloading">Downloading… %1$d%%</string>
+    <string name="update_preparing">Preparing…</string>
+    <string name="update_download_failed">Download failed</string>
+    <string name="update_install_failed">Install failed</string>
+    <string name="update_ready_to_install">Downloaded, tap to install</string>
 </resources>
