@@ -34,6 +34,8 @@ class SettingsRepository(context: Context) {
             enableScrollAnimation = prefs.getBoolean(KEY_ENABLE_SCROLL_ANIMATION, AppPreferences().enableScrollAnimation),
             enablePredictiveBack = prefs.getBoolean(KEY_ENABLE_PREDICTIVE_BACK, AppPreferences().enablePredictiveBack),
             enableSwipeDismiss = prefs.getBoolean(KEY_ENABLE_SWIPE_DISMISS, AppPreferences().enableSwipeDismiss),
+            enableNavigationBadge = prefs.getBoolean(KEY_ENABLE_NAVIGATION_BADGE, AppPreferences().enableNavigationBadge),
+            pagerInterceptionMode = prefs.getInt(KEY_PAGER_INTERCEPTION_MODE, AppPreferences().pagerInterceptionMode),
             pageScale = prefs.getFloat(KEY_PAGE_SCALE, AppPreferences().pageScale),
             blurIntensity = prefs.getFloat(KEY_BLUR_INTENSITY, AppPreferences().blurIntensity),
             blurAlpha = prefs.getFloat(KEY_BLUR_ALPHA, AppPreferences().blurAlpha),
@@ -64,6 +66,8 @@ class SettingsRepository(context: Context) {
             putBoolean(KEY_ENABLE_SCROLL_ANIMATION, updated.enableScrollAnimation)
             putBoolean(KEY_ENABLE_PREDICTIVE_BACK, updated.enablePredictiveBack)
             putBoolean(KEY_ENABLE_SWIPE_DISMISS, updated.enableSwipeDismiss)
+            putBoolean(KEY_ENABLE_NAVIGATION_BADGE, updated.enableNavigationBadge)
+            putInt(KEY_PAGER_INTERCEPTION_MODE, updated.pagerInterceptionMode)
             putFloat(KEY_PAGE_SCALE, updated.pageScale)
             putFloat(KEY_BLUR_INTENSITY, updated.blurIntensity)
             putFloat(KEY_BLUR_ALPHA, updated.blurAlpha)
@@ -88,6 +92,18 @@ class SettingsRepository(context: Context) {
     suspend fun setMiuixMonet(value: Boolean) = update { it.copy(miuixMonet = value) }
 
     suspend fun setEnableBlur(value: Boolean) = update { it.copy(enableBlur = value) }
+
+    suspend fun setEnableFloatingBottomBar(value: Boolean) = update { it.copy(enableFloatingBottomBar = value) }
+
+    suspend fun setEnableFloatingBottomBarBlur(value: Boolean) = update { it.copy(enableFloatingBottomBarBlur = value) }
+
+    suspend fun setEnablePredictiveBack(value: Boolean) = update { it.copy(enablePredictiveBack = value) }
+
+    suspend fun setEnableSwipeDismiss(value: Boolean) = update { it.copy(enableSwipeDismiss = value) }
+
+    suspend fun setEnableNavigationBadge(value: Boolean) = update { it.copy(enableNavigationBadge = value) }
+
+    suspend fun setPagerInterceptionMode(value: Int) = update { it.copy(pagerInterceptionMode = value) }
 
     suspend fun setBlurIntensity(value: Float) = update { it.copy(blurIntensity = value) }
 
@@ -114,6 +130,8 @@ class SettingsRepository(context: Context) {
         private const val KEY_ENABLE_SCROLL_ANIMATION = "enable_scroll_animation"
         private const val KEY_ENABLE_PREDICTIVE_BACK = "enable_predictive_back"
         private const val KEY_ENABLE_SWIPE_DISMISS = "enable_swipe_dismiss"
+        private const val KEY_ENABLE_NAVIGATION_BADGE = "enable_navigation_badge"
+        private const val KEY_PAGER_INTERCEPTION_MODE = "pager_interception_mode"
         private const val KEY_PAGE_SCALE = "page_scale"
         private const val KEY_BLUR_INTENSITY = "blur_intensity"
         private const val KEY_BLUR_ALPHA = "blur_alpha"
