@@ -2,6 +2,7 @@ package com.coverRoot.ui.screen
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -61,6 +62,7 @@ fun SettingsMaterialScreen(
     val updateInfoState = remember { mutableStateOf<UpdateChecker.UpdateInfo?>(null) }
     val showUpdateDialog = remember { mutableStateOf(false) }
     val checkingUpdate = remember { mutableStateOf(false) }
+    val downloadState = remember { mutableStateOf(MaterialDownloadState()) }
 
     val uiModeOptions = listOf(
         stringResource(R.string.mode_miuix),
@@ -161,13 +163,15 @@ fun SettingsMaterialScreen(
                 item {
                     SegmentedListItem(
                         onClick = {
-                            scope.launch {
-                                checkingUpdate.value = true
-                                val info = updateChecker.checkForUpdate()
-                                updateInfoState.value = info
-                                checkingUpdate.value = false
+                            if (!checkingUpdate.value) {
+                                scope.launch {
+                                    checkingUpdate.value = true
+                                    val info = updateChecker.checkForUpdate()
+                                    updateInfoState.value = info
+                                    checkingUpdate.value = false
+                                    if (info != null) showUpdateDialog.value = true
+                                }
                             }
-                            if (updateInfoState.value != null) showUpdateDialog.value = true
                         },
                         leadingContent = {
                             Icon(
@@ -272,4 +276,102 @@ fun SettingsMaterialScreen(
             }
         }
     }
+
+    // 更新对话框（Material 版，支持直接下载安装）
+    if (showUpdateDialog.value && updateInfoState.value != null) {
+        val info = updateInfoState.value!!
+        MaterialUpdateDialog(
+            info = info,
+            downloadState = downloadState.value,
+            onDismiss = {
+                if (downloadState.value.status != MaterialUpdateStatus.DOWNLOADING) {
+                    showUpdateDialog.value = false
+                }
+            },
+            onDownload = {
+                if (downloadState.value.status == MaterialUpdateStatus.DOWNLOADING) return@MaterialUpdateDialog
+                scope.launch {
+                    downloadState.value = MaterialDownloadState(MaterialUpdateStatus.DOWNLOADING)
+                    val file = com.coverRoot.util.ApkInstaller.download(
+                        context = context,
+                        url = info.zipUrl,
+                    ) { p ->
+                        downloadState.value =
+                            MaterialDownloadState(MaterialUpdateStatus.DOWNLOADING, p)
+                    }
+                    downloadState.value = if (file != null) {
+                        MaterialDownloadState(MaterialUpdateStatus.READY, file = file)
+                    } else {
+                        MaterialDownloadState(MaterialUpdateStatus.FAILED)
+                    }
+                }
+            },
+            onInstall = {
+                val file = downloadState.value.file ?: return@MaterialUpdateDialog
+                com.coverRoot.util.ApkInstaller.install(context, file)
+            },
+        )
+    }
 }
+
+@Composable
+private fun MaterialUpdateDialog(
+    info: UpdateChecker.UpdateInfo,
+    downloadState: MaterialDownloadState,
+    onDismiss: () -> Unit,
+    onDownload: () -> Unit,
+    onInstall: () -> Unit,
+) {
+    val downloading = downloadState.status == MaterialUpdateStatus.DOWNLOADING
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = { if (!downloading) onDismiss() },
+        title = { Text(stringResource(R.string.update_available)) },
+        text = {
+            Column {
+                Text("v${info.version} (${info.versionCode})")
+                if (!info.changelog.isNullOrEmpty()) {
+                    androidx.compose.foundation.layout.Spacer(
+                        Modifier.height(8.dp)
+                    )
+                    Text(
+                        text = info.changelog,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = {
+                when (downloadState.status) {
+                    MaterialUpdateStatus.READY -> onInstall()
+                    MaterialUpdateStatus.FAILED, MaterialUpdateStatus.IDLE -> onDownload()
+                    MaterialUpdateStatus.DOWNLOADING -> {}
+                }
+            }) {
+                Text(
+                    when (downloadState.status) {
+                        MaterialUpdateStatus.DOWNLOADING ->
+                            stringResource(R.string.update_downloading, downloadState.progress)
+                        MaterialUpdateStatus.READY -> stringResource(R.string.update_install)
+                        MaterialUpdateStatus.FAILED -> stringResource(R.string.update_download_failed)
+                        MaterialUpdateStatus.IDLE -> stringResource(R.string.update_download)
+                    }
+                )
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(
+                onClick = { if (!downloading) onDismiss() }
+            ) { Text(stringResource(android.R.string.cancel)) }
+        },
+    )
+}
+
+private enum class MaterialUpdateStatus { IDLE, DOWNLOADING, READY, FAILED }
+
+private data class MaterialDownloadState(
+    val status: MaterialUpdateStatus = MaterialUpdateStatus.IDLE,
+    val progress: Int = 0,
+    val file: java.io.File? = null,
+)
