@@ -1,6 +1,10 @@
 name: Android CI
 
 on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -23,10 +27,19 @@ jobs:
           gradle-version: '9.7.1'
 
       - name: Build debug APK
-        run: gradle assembleDebug --stacktrace --console=plain
+        run: gradle assembleDebug --stacktrace --console=plain 2>&1 | tee build-log.txt
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build-log.txt
+          if-no-files-found: ignore
+          retention-days: 14
