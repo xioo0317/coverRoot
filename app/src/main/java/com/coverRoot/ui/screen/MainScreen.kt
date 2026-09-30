@@ -69,6 +69,11 @@ import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.utils.PagerGestureNestedScrollConnection
 import top.yukonga.miuix.kmp.utils.PagerInterceptionMode
 import top.yukonga.miuix.kmp.utils.pagerGestureOverride
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import com.coverRoot.data.AppPreferences
+import com.coverRoot.data.SettingsRepository
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 
 private enum class MainTab(val titleResId: Int) {
@@ -90,6 +95,16 @@ fun MainScreen() {
 
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { TABS.size })
     val mainPagerState = rememberMainPagerState(pagerState = pagerState)
+
+    // 读取分页手势模式（0=默认 1=横向拦截 2=类iOS）
+    val appContext = LocalContext.current
+    val repository = remember { SettingsRepository(appContext) }
+    val prefs by repository.preferencesFlow.collectAsState(initial = AppPreferences())
+    val pagerMode = when (prefs.pagerInterceptionMode.coerceIn(0, 2)) {
+        0 -> PagerInterceptionMode.Native
+        2 -> PagerInterceptionMode.TapToHalt
+        else -> PagerInterceptionMode.CrossAxisInterceptor
+    }
 
     val pagerBackEnabled = mainPagerState.selectedPage != 0
     val navEventState = rememberNavigationEventState(NavigationEventInfo.None)
@@ -136,7 +151,7 @@ fun MainScreen() {
                             .imePadding()
                             .pagerGestureOverride(
                                 pagerState = mainPagerState.pagerState,
-                                mode = PagerInterceptionMode.CrossAxisInterceptor,
+                                mode = pagerMode,
                             ),
                         beyondViewportPageCount = TABS.size - 1,
                         overscrollEffect = null,
