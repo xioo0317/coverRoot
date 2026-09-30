@@ -231,8 +231,8 @@ fun AppearanceMaterial() {
                     ),
                 )
             }
-            AnimatedVisibility(visible = prefs.enableBlur) {
-                item {
+            item {
+                AnimatedVisibility(visible = prefs.enableBlur) {
                     TonalCard(modifier = Modifier.padding(horizontal = 16.dp)) {
                         Column(
                             modifier = Modifier.padding(16.dp),
