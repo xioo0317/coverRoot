@@ -197,7 +197,7 @@ private fun UpdateCard(
         scope.launch {
                 download(
                     newVersion.downloadUrl,
-                    android.net.Uri.decode(newVersion.downloadUrl.substringAfterLast('/')).ifEmpty { "coverRoot-update.apk" }
+                    fileNameFromUrl(newVersion.downloadUrl)
                 )
             }
     })
@@ -215,7 +215,7 @@ private fun UpdateCard(
                             scope.launch {
                 download(
                     newVersion.downloadUrl,
-                    android.net.Uri.decode(newVersion.downloadUrl.substringAfterLast('/')).ifEmpty { "coverRoot-update.apk" }
+                    fileNameFromUrl(newVersion.downloadUrl)
                 )
             }
                 } else {

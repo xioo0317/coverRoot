@@ -13,6 +13,12 @@ import okhttp3.Request
  * @author weishu
  * @date 2023/6/22.
  */
+/** Extract a safe file name from a download URL. */
+fun fileNameFromUrl(url: String): String {
+    val raw = android.net.Uri.decode(url.substringAfterLast('/').substringBefore('?'))
+    return raw.replace(Regex("[\\\\/:*?\"<>|]"), "_").ifEmpty { "coverRoot-update.apk" }
+}
+
 suspend fun download(
     url: String,
     fileName: String,
