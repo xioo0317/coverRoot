@@ -28,13 +28,26 @@ class HomeViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(buildState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    // Check the update source only once per process; keep the result so the
+    // update card stays locked until the local version catches up or the user
+    // turns off the check-update switch in settings.
+    private var updateChecked = false
+
     fun refresh() {
         viewModelScope.launch {
             val baseState = withContext(Dispatchers.IO) { buildState() }
-            _uiState.update { baseState }
             if (baseState.checkUpdateEnabled) {
-                val latestVersionInfo = withContext(Dispatchers.IO) { checkNewVersion() }
-                _uiState.update { it.copy(latestVersionInfo = latestVersionInfo) }
+                _uiState.update { current ->
+                    baseState.copy(latestVersionInfo = current.latestVersionInfo)
+                }
+                if (!updateChecked) {
+                    updateChecked = true
+                    val latestVersionInfo = withContext(Dispatchers.IO) { checkNewVersion() }
+                    _uiState.update { it.copy(latestVersionInfo = latestVersionInfo) }
+                }
+            } else {
+                // Check-update disabled: clear cached info so the card hides.
+                _uiState.update { baseState }
             }
         }
     }
