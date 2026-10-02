@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.rounded.CheckCircleOutline
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -93,7 +94,6 @@ import kotlinx.coroutines.withContext
 import me.weishu.kernelsu.ui.util.download
 import me.weishu.kernelsu.ui.util.fileNameFromUrl
 import me.weishu.kernelsu.ui.util.checkNewVersion
-import me.weishu.kernelsu.ui.util.module.LatestVersionInfo
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.runtime.LaunchedEffect
