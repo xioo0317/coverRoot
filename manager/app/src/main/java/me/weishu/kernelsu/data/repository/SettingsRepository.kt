@@ -19,4 +19,5 @@ interface SettingsRepository {
     var moduleDescriptionMaxLines: Int
     var moduleSortEnabledFirst: Boolean
     var moduleSortActionFirst: Boolean
+    var checkUpdate: Boolean
 }

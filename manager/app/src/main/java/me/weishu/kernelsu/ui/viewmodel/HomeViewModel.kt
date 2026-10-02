@@ -12,11 +12,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.weishu.kernelsu.BuildConfig
+import me.weishu.kernelsu.data.repository.SettingsRepositoryImpl
 import me.weishu.kernelsu.getKernelVersion
 import me.weishu.kernelsu.ksuApp
 import me.weishu.kernelsu.ui.screen.home.HomeUiState
 import me.weishu.kernelsu.ui.screen.home.SystemInfo
 import me.weishu.kernelsu.ui.screen.home.getManagerVersion
+import me.weishu.kernelsu.ui.util.checkNewVersion
 import me.weishu.kernelsu.ui.util.module.LatestVersionInfo
 import me.weishu.kernelsu.ui.util.resolveDeviceName
 import java.io.File
@@ -30,6 +32,10 @@ class HomeViewModel : ViewModel() {
         viewModelScope.launch {
             val baseState = withContext(Dispatchers.IO) { buildState() }
             _uiState.update { baseState }
+            if (baseState.checkUpdateEnabled) {
+                val latestVersionInfo = withContext(Dispatchers.IO) { checkNewVersion() }
+                _uiState.update { it.copy(latestVersionInfo = latestVersionInfo) }
+            }
         }
     }
 
@@ -53,7 +59,7 @@ class HomeViewModel : ViewModel() {
             isRootAvailable = true,
             isSafeMode = false,
             isLateLoadMode = false,
-            checkUpdateEnabled = false,
+            checkUpdateEnabled = SettingsRepositoryImpl().checkUpdate,
             latestVersionInfo = LatestVersionInfo(),
             currentManagerVersionCode = managerVersion.versionCode,
             systemInfo = SystemInfo(

@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DisplaySettings
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,6 +37,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.preference.ArrowPreference
+import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
@@ -81,6 +83,29 @@ fun SettingPagerMiuix(
                 contentPadding = innerPadding,
                 overscrollEffect = null,
             ) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .fillMaxWidth(),
+                    ) {
+                        SwitchPreference(
+                            title = stringResource(id = R.string.settings_check_update),
+                            summary = stringResource(id = R.string.settings_check_update_summary),
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.SystemUpdate,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_check_update),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            checked = uiState.checkUpdate,
+                            onCheckedChange = actions.onSetCheckUpdate
+                        )
+                    }
+                }
+
                 item {
                     Card(
                         modifier = Modifier

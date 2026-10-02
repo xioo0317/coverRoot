@@ -85,6 +85,9 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme.isDynamicColor
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import me.weishu.kernelsu.ui.util.download
 
 @Composable
 fun HomePagerMiuix(
@@ -189,7 +192,15 @@ private fun UpdateCard(
     val newVersion = state.latestVersionInfo
     val title = stringResource(id = R.string.module_changelog)
     val updateText = stringResource(id = R.string.module_update)
-    val updateDialog = rememberConfirmDialog(onConfirm = { actions.onOpenUrl(newVersion.downloadUrl) })
+    val scope = rememberCoroutineScope()
+    val updateDialog = rememberConfirmDialog(onConfirm = {
+        scope.launch {
+                download(
+                    newVersion.downloadUrl,
+                    android.net.Uri.decode(newVersion.downloadUrl.substringAfterLast('/')).ifEmpty { "coverRoot-update.apk" }
+                )
+            }
+    })
 
     AnimatedVisibility(
         visible = state.hasUpdate,
@@ -201,7 +212,12 @@ private fun UpdateCard(
             level = WarningLevel.Notice,
             onClick = {
                 if (newVersion.changelog.isEmpty()) {
-                    actions.onOpenUrl(newVersion.downloadUrl)
+                            scope.launch {
+                download(
+                    newVersion.downloadUrl,
+                    android.net.Uri.decode(newVersion.downloadUrl.substringAfterLast('/')).ifEmpty { "coverRoot-update.apk" }
+                )
+            }
                 } else {
                     updateDialog.showConfirm(
                         title = title,

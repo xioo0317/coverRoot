@@ -70,6 +70,9 @@ import me.weishu.kernelsu.ui.component.material.SegmentedListItem
 import me.weishu.kernelsu.ui.component.material.TonalCard
 import me.weishu.kernelsu.ui.component.material.expressiveTopAppBarColors
 import me.weishu.kernelsu.ui.component.statustag.StatusTag
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import me.weishu.kernelsu.ui.util.download
 
 @Composable
 fun HomePagerMaterial(
@@ -152,13 +155,26 @@ private fun UpdateCard(
         enter = fadeIn() + expandVertically(),
         exit = shrinkVertically() + fadeOut()
     ) {
-        val updateDialog = rememberConfirmDialog(onConfirm = { actions.onOpenUrl(newVersion.downloadUrl) })
+        val scope = rememberCoroutineScope()
+    val updateDialog = rememberConfirmDialog(onConfirm = {
+        scope.launch {
+                download(
+                    newVersion.downloadUrl,
+                    android.net.Uri.decode(newVersion.downloadUrl.substringAfterLast('/')).ifEmpty { "coverRoot-update.apk" }
+                )
+            }
+    })
         WarningCard(
             message = stringResource(id = R.string.new_version_available, newVersion.versionCode),
             level = WarningLevel.Notice
         ) {
             if (newVersion.changelog.isEmpty()) {
-                actions.onOpenUrl(newVersion.downloadUrl)
+                        scope.launch {
+                download(
+                    newVersion.downloadUrl,
+                    android.net.Uri.decode(newVersion.downloadUrl.substringAfterLast('/')).ifEmpty { "coverRoot-update.apk" }
+                )
+            }
             } else {
                 updateDialog.showConfirm(
                     title = title,

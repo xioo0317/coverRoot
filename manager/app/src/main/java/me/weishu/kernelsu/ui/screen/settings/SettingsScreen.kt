@@ -48,6 +48,7 @@ fun SettingPager(
             viewModel.setUiMode(if (index == 1) "material" else "miuix")
         },
         onOpenAbout = { navigator.push(Route.About) },
+        onSetCheckUpdate = { viewModel.setCheckUpdate(it) },
     )
 
     when (LocalUiMode.current) {

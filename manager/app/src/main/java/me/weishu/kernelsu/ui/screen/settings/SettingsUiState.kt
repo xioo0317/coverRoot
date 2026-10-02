@@ -19,10 +19,12 @@ data class SettingsUiState(
     val enableNavigationBadge: Boolean = true,
     val pageScale: Float = 1.0f,
     val moduleDescriptionMaxLines: Int = 4,
+    val checkUpdate: Boolean = true,
 )
 
 data class SettingsScreenActions(
     val onOpenTheme: () -> Unit = {},
     val onSetUiModeIndex: (Int) -> Unit = {},
     val onOpenAbout: () -> Unit = {},
+    val onSetCheckUpdate: (Boolean) -> Unit = {},
 )

@@ -40,6 +40,7 @@ class SettingsViewModel(
             val colorStyle = repo.colorStyle
             val colorSpec = repo.colorSpec
             val uiMode = repo.uiMode
+            val checkUpdate = repo.checkUpdate
 
             _uiState.update {
                 it.copy(
@@ -56,6 +57,7 @@ class SettingsViewModel(
                     enableNavigationBadge = enableNavigationBadge,
                     pageScale = pageScale,
                     moduleDescriptionMaxLines = moduleDescriptionMaxLines,
+                    checkUpdate = checkUpdate,
                     colorStyle = colorStyle,
                     colorSpec = colorSpec,
                 )
@@ -180,5 +182,10 @@ class SettingsViewModel(
     fun setModuleDescriptionMaxLines(lines: Int) {
         repo.moduleDescriptionMaxLines = lines
         _uiState.update { it.copy(moduleDescriptionMaxLines = lines) }
+    }
+
+    fun setCheckUpdate(enabled: Boolean) {
+        repo.checkUpdate = enabled
+        _uiState.update { it.copy(checkUpdate = enabled) }
     }
 }
