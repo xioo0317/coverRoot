@@ -73,6 +73,7 @@ import me.weishu.kernelsu.ui.component.statustag.StatusTag
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import me.weishu.kernelsu.ui.util.download
+import me.weishu.kernelsu.ui.util.fileNameFromUrl
 
 @Composable
 fun HomePagerMaterial(

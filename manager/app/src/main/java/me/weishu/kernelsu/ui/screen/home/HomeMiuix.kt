@@ -88,6 +88,7 @@ import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import me.weishu.kernelsu.ui.util.download
+import me.weishu.kernelsu.ui.util.fileNameFromUrl
 
 @Composable
 fun HomePagerMiuix(
