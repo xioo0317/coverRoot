@@ -76,3 +76,36 @@ fun checkNewVersion(): LatestVersionInfo {
     }
     return LatestVersionInfo()
 }
+
+/**
+ * If [uri] points to a zip archive, extract the largest .apk inside into the
+ * cache directory and return its FileProvider uri; otherwise return [uri] as is.
+ * Blocking IO — call off the main thread.
+ */
+fun resolveInstallableUri(context: android.content.Context, uri: android.net.Uri): android.net.Uri {
+    val name = uri.getFileName(context) ?: fileNameFromUrl(uri.toString())
+    if (name.endsWith(".apk", ignoreCase = true) || !name.endsWith(".zip", ignoreCase = true)) return uri
+    return runCatching {
+        val outDir = java.io.File(context.cacheDir, "apk_update").apply { mkdirs() }
+        outDir.listFiles()?.forEach { it.delete() }
+        var candidate: java.io.File? = null
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            java.util.zip.ZipInputStream(input).use { zis ->
+                var entry = zis.nextEntry
+                while (entry != null) {
+                    if (!entry.isDirectory && entry.name.endsWith(".apk", ignoreCase = true)) {
+                        val out = java.io.File(outDir, entry.name.substringAfterLast('/'))
+                        java.io.FileOutputStream(out).use { zis.copyTo(it) }
+                        if (candidate == null || out.length() > (candidate?.length() ?: 0L)) candidate = out
+                    }
+                    entry = zis.nextEntry
+                }
+            }
+        }
+        candidate?.let {
+            androidx.core.content.FileProvider.getUriForFile(
+                context, context.packageName + ".fileprovider", it
+            )
+        }
+    }.getOrNull() ?: uri
+}

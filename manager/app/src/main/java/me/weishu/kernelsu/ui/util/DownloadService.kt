@@ -179,9 +179,10 @@ class DownloadService : Service() {
                 DownloadManager.markCompleted(id, uri)
 
                 notificationManager.cancel(id)
+                val installUri = resolveInstallableUri(this@DownloadService, uri)
                 notificationManager.notify(
                     COMPLETION_NOTIFICATION_ID_BASE + id,
-                    buildCompletionNotification(id, displayName, uri)
+                    buildCompletionNotification(id, displayName, installUri)
                 )
             } catch (e: CancellationException) {
                 throw e

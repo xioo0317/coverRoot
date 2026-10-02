@@ -226,20 +226,23 @@ private fun UpdateCard(
                     url = display.downloadUrl,
                     fileName = fileNameFromUrl(display.downloadUrl),
                     onDownloaded = { uri ->
-                        if (context.packageManager.canRequestPackageInstalls()) {
-                            val install = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
-                                setDataAndType(uri, "application/vnd.android.package-archive")
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            runCatching { context.startActivity(install) }
-                        } else {
-                            runCatching {
-                                context.startActivity(
-                                    Intent(
-                                        android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                                        android.net.Uri.parse("package:" + context.packageName)
+                        scope.launch {
+                            val installUri = withContext(Dispatchers.IO) { resolveInstallableUri(context, uri) }
+                            if (context.packageManager.canRequestPackageInstalls()) {
+                                val install = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
+                                    setDataAndType(installUri, "application/vnd.android.package-archive")
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                runCatching { context.startActivity(install) }
+                            } else {
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(
+                                            android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                            android.net.Uri.parse("package:" + context.packageName)
+                                        )
                                     )
-                                )
+                                }
                             }
                         }
                     },
