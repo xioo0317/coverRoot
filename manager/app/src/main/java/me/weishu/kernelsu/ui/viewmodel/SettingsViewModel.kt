@@ -29,14 +29,10 @@ class SettingsViewModel(
             val miuixMonet = repo.miuixMonet
             val keyColor = repo.keyColor
             val enablePredictiveBack = repo.enablePredictiveBack
-            val enableSwipeDismiss = repo.enableSwipeDismiss
-            val pagerInterceptionMode = repo.pagerInterceptionMode
             val enableBlur = repo.enableBlur
             val enableFloatingBottomBar = repo.enableFloatingBottomBar
             val enableFloatingBottomBarBlur = repo.enableFloatingBottomBarBlur
-            val enableNavigationBadge = repo.enableNavigationBadge
             val pageScale = repo.pageScale
-            val moduleDescriptionMaxLines = repo.moduleDescriptionMaxLines
             val colorStyle = repo.colorStyle
             val colorSpec = repo.colorSpec
             val uiMode = repo.uiMode
@@ -50,14 +46,10 @@ class SettingsViewModel(
                     miuixMonet = miuixMonet,
                     keyColor = keyColor,
                     enablePredictiveBack = enablePredictiveBack,
-                    enableSwipeDismiss = enableSwipeDismiss,
-                    pagerInterceptionMode = pagerInterceptionMode,
                     enableBlur = enableBlur,
                     enableFloatingBottomBar = enableFloatingBottomBar,
                     enableFloatingBottomBarBlur = enableFloatingBottomBarBlur,
-                    enableNavigationBadge = enableNavigationBadge,
                     pageScale = pageScale,
-                    moduleDescriptionMaxLines = moduleDescriptionMaxLines,
                     checkUpdate = checkUpdate,
                     appLanguage = appLanguage,
                     colorStyle = colorStyle,
@@ -146,16 +138,6 @@ class SettingsViewModel(
         _uiState.update { it.copy(enablePredictiveBack = enabled) }
     }
 
-    fun setEnableSwipeDismiss(enabled: Boolean) {
-        repo.enableSwipeDismiss = enabled
-        _uiState.update { it.copy(enableSwipeDismiss = enabled) }
-    }
-
-    fun setPagerInterceptionMode(mode: Int) {
-        repo.pagerInterceptionMode = mode
-        _uiState.update { it.copy(pagerInterceptionMode = mode.coerceIn(0, 2)) }
-    }
-
     fun setEnableBlur(enabled: Boolean) {
         repo.enableBlur = enabled
         _uiState.update { it.copy(enableBlur = enabled) }
@@ -171,19 +153,9 @@ class SettingsViewModel(
         _uiState.update { it.copy(enableFloatingBottomBarBlur = enabled) }
     }
 
-    fun setEnableNavigationBadge(enabled: Boolean) {
-        repo.enableNavigationBadge = enabled
-        _uiState.update { it.copy(enableNavigationBadge = enabled) }
-    }
-
     fun setPageScale(scale: Float) {
         repo.pageScale = scale
         _uiState.update { it.copy(pageScale = scale) }
-    }
-
-    fun setModuleDescriptionMaxLines(lines: Int) {
-        repo.moduleDescriptionMaxLines = lines
-        _uiState.update { it.copy(moduleDescriptionMaxLines = lines) }
     }
 
     fun setCheckUpdate(enabled: Boolean) {

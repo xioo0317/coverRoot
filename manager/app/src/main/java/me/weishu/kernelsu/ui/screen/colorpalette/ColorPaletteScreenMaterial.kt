@@ -270,22 +270,6 @@ fun ColorPaletteScreenMaterial(
                 )
             }
 
-            item {
-                SegmentedColumn(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    content = listOf(
-                        {
-                            SegmentedSwitchItem(
-                                icon = Icons.Rounded.Pin,
-                                title = stringResource(id = R.string.settings_navigation_badge),
-                                summary = stringResource(id = R.string.settings_navigation_badge_summary),
-                                checked = uiState.enableNavigationBadge,
-                                onCheckedChange = actions.onSetEnableNavigationBadge
-                            )
-                        }
-                    )
-                )
-            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 item {
@@ -306,35 +290,6 @@ fun ColorPaletteScreenMaterial(
                 }
             }
 
-            item {
-                SegmentedColumn(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    content = listOf(
-                        {
-                            SegmentedSwitchItem(
-                                icon = Icons.Rounded.Swipe,
-                                title = stringResource(id = R.string.settings_enable_swipe_dismiss),
-                                summary = stringResource(id = R.string.settings_enable_swipe_dismiss_summary),
-                                checked = uiState.enableSwipeDismiss,
-                                onCheckedChange = actions.onSetEnableSwipeDismiss,
-                            )
-                        },
-                        {
-                            SegmentedDropdownItem(
-                                icon = Icons.Rounded.ViewCarousel,
-                                title = stringResource(id = R.string.settings_pager_gesture_mode),
-                                items = listOf(
-                                    stringResource(id = R.string.settings_pager_gesture_native),
-                                    stringResource(id = R.string.settings_pager_gesture_cross_axis),
-                                    stringResource(id = R.string.settings_pager_gesture_ios_like),
-                                ),
-                                selectedIndex = uiState.pagerInterceptionMode.coerceIn(0, 2),
-                                onItemSelected = actions.onSetPagerInterceptionMode,
-                            )
-                        },
-                    ),
-                )
-            }
 
             item {
                 TonalCard(modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -387,59 +342,6 @@ fun ColorPaletteScreenMaterial(
                 }
             }
 
-            item {
-                TonalCard(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    val sliderState = rememberSliderState(
-                        value = uiState.moduleDescriptionMaxLines.toFloat(),
-                        steps = 3,
-                        trackRange = 1f..5f
-                    )
-
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Rounded.Description,
-                                contentDescription = stringResource(id = R.string.settings_module_description_max_lines),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.settings_module_description_max_lines),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = stringResource(id = R.string.settings_module_description_max_lines_summary),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Text(
-                                text = "${sliderState.value.roundToInt()} " + stringResource(R.string.unit_lines),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        Slider(
-                            state = sliderState,
-                            onValueChangeFinished = {
-                                actions.onSetModuleDescriptionMaxLines(sliderState.value.roundToInt())
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
 
             item {
                 Spacer(modifier = Modifier.height(16.dp + navBars.calculateBottomPadding() + captionBar.calculateBottomPadding()))

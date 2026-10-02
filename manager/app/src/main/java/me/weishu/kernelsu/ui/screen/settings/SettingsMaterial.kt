@@ -79,6 +79,12 @@ fun SettingPagerMaterial(
                             onCheckedChange = actions.onSetCheckUpdate
                         )
                     },
+                )
+            )
+
+            SegmentedColumn(
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 13.dp),
+                content = listOf(
                     {
                         val langItems = listOf(
                             stringResource(id = R.string.app_language_follow_system),

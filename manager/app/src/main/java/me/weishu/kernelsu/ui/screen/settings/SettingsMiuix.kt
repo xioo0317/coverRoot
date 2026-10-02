@@ -105,7 +105,15 @@ fun SettingPagerMiuix(
                             checked = uiState.checkUpdate,
                             onCheckedChange = actions.onSetCheckUpdate
                         )
+                    }
+                }
 
+                item {
+                    Card(
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .fillMaxWidth(),
+                    ) {
                         val langItems = listOf(
                             stringResource(id = R.string.app_language_follow_system),
                             "简体中文",
