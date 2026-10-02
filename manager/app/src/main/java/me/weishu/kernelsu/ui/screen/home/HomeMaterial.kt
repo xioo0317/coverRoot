@@ -74,6 +74,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import me.weishu.kernelsu.ui.util.download
 import me.weishu.kernelsu.ui.util.fileNameFromUrl
+import android.content.Intent
+import android.widget.Toast
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 
 @Composable
 fun HomePagerMaterial(
@@ -150,6 +156,7 @@ private fun UpdateCard(
     val newVersion = state.latestVersionInfo
     val title = stringResource(id = R.string.module_changelog)
     val updateText = stringResource(id = R.string.module_update)
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     AnimatedVisibility(
         visible = state.hasUpdate,
@@ -157,25 +164,63 @@ private fun UpdateCard(
         exit = shrinkVertically() + fadeOut()
     ) {
         val scope = rememberCoroutineScope()
-    val updateDialog = rememberConfirmDialog(onConfirm = {
-        scope.launch {
+        val startDownload: () -> Unit = {
+            scope.launch {
                 download(
-                    newVersion.downloadUrl,
-                    fileNameFromUrl(newVersion.downloadUrl)
+                    url = newVersion.downloadUrl,
+                    fileName = fileNameFromUrl(newVersion.downloadUrl),
+                    onDownloaded = { uri ->
+                        if (context.packageManager.canRequestPackageInstalls()) {
+                            val install = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
+                                setDataAndType(uri, "application/vnd.android.package-archive")
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            runCatching { context.startActivity(install) }
+                        } else {
+                            runCatching {
+                                context.startActivity(
+                                    Intent(
+                                        android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                        android.net.Uri.parse("package:" + context.packageName)
+                                    )
+                                )
+                            }
+                        }
+                    },
+                    onDownloading = {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.download_progress_title, fileNameFromUrl(newVersion.downloadUrl)),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    },
                 )
             }
-    })
+        }
+        val updateDialog = rememberConfirmDialog(onConfirm = { startDownload() })
+
+        // Auto-show the changelog dialog once per session when an update is found.
+        var autoShown by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(state.hasUpdate) {
+            if (state.hasUpdate && !autoShown) {
+                autoShown = true
+                if (newVersion.changelog.isNotEmpty()) {
+                    updateDialog.showConfirm(
+                        title = title,
+                        content = newVersion.changelog,
+                        markdown = true,
+                        confirm = updateText
+                    )
+                }
+            }
+        }
+
         WarningCard(
             message = stringResource(id = R.string.new_version_available, newVersion.versionCode),
             level = WarningLevel.Notice
         ) {
             if (newVersion.changelog.isEmpty()) {
-                        scope.launch {
-                download(
-                    newVersion.downloadUrl,
-                    fileNameFromUrl(newVersion.downloadUrl)
-                )
-            }
+                startDownload()
             } else {
                 updateDialog.showConfirm(
                     title = title,
