@@ -97,10 +97,8 @@ import me.weishu.kernelsu.ui.util.fileNameFromUrl
 import me.weishu.kernelsu.ui.util.checkNewVersion
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 
 @Composable
@@ -280,20 +278,6 @@ private fun UpdateCard(
                         )
                     }
                 }
-            }
-        }
-
-        // Auto-show the changelog dialog once per session when an update is found.
-        var autoShown by rememberSaveable { mutableStateOf(false) }
-        LaunchedEffect(state.hasUpdate) {
-            if (state.hasUpdate && !autoShown) {
-                autoShown = true
-                updateDialog.showConfirm(
-                    title = title,
-                    content = newVersion.changelog.ifBlank { startDown },
-                    markdown = newVersion.changelog.isNotEmpty(),
-                    confirm = updateText
-                )
             }
         }
 
