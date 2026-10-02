@@ -58,6 +58,7 @@ import me.weishu.kernelsu.KernelVersion
 import me.weishu.kernelsu.R
 import me.weishu.kernelsu.ui.component.WarningLevel
 import me.weishu.kernelsu.ui.component.dialog.rememberConfirmDialog
+import me.weishu.kernelsu.ui.component.dialog.rememberLoadingDialog
 import me.weishu.kernelsu.ui.component.miuix.WarningCard
 import me.weishu.kernelsu.ui.component.statustag.StatusTag
 import me.weishu.kernelsu.ui.theme.LocalEnableBlur
@@ -87,8 +88,12 @@ import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import me.weishu.kernelsu.ui.util.download
 import me.weishu.kernelsu.ui.util.fileNameFromUrl
+import me.weishu.kernelsu.ui.util.checkNewVersion
+import me.weishu.kernelsu.ui.util.module.LatestVersionInfo
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.runtime.LaunchedEffect
@@ -200,6 +205,9 @@ private fun UpdateCard(
     val newVersion = state.latestVersionInfo
     val title = stringResource(id = R.string.module_changelog)
     val updateText = stringResource(id = R.string.module_update)
+    val alreadyLatest = stringResource(id = R.string.update_already_latest)
+    val checkFailed = stringResource(id = R.string.update_check_failed)
+    val startDown = stringResource(id = R.string.module_start_downloading, "coverRoot")
     val context = androidx.compose.ui.platform.LocalContext.current
 
     AnimatedVisibility(
@@ -208,11 +216,15 @@ private fun UpdateCard(
         exit = shrinkVertically() + fadeOut()
     ) {
         val scope = rememberCoroutineScope()
+        // Fresh info fetched on demand; falls back to the state value.
+        var freshInfo by remember { mutableStateOf<LatestVersionInfo?>(null) }
+        val display = freshInfo ?: newVersion
+
         val startDownload: () -> Unit = {
             scope.launch {
                 download(
-                    url = newVersion.downloadUrl,
-                    fileName = fileNameFromUrl(newVersion.downloadUrl),
+                    url = display.downloadUrl,
+                    fileName = fileNameFromUrl(display.downloadUrl),
                     onDownloaded = { uri ->
                         if (context.packageManager.canRequestPackageInstalls()) {
                             val install = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
@@ -234,7 +246,7 @@ private fun UpdateCard(
                     onDownloading = {
                         Toast.makeText(
                             context,
-                            context.getString(R.string.download_progress_title, fileNameFromUrl(newVersion.downloadUrl)),
+                            context.getString(R.string.download_progress_title, fileNameFromUrl(display.downloadUrl)),
                             Toast.LENGTH_SHORT
                         ).show()
                     },
@@ -242,38 +254,50 @@ private fun UpdateCard(
             }
         }
         val updateDialog = rememberConfirmDialog(onConfirm = { startDownload() })
+        val loadingDialog = rememberLoadingDialog()
+
+        // Check on click: loading circle while fetching, then show the
+        // changelog dialog — mirrors the module page update UX.
+        val onCheck: () -> Unit = {
+            scope.launch {
+                loadingDialog.withLoading {
+                    val fresh = withContext(Dispatchers.IO) { checkNewVersion() }
+                    if (fresh.versionCode <= 0) {
+                        Toast.makeText(context, checkFailed, Toast.LENGTH_SHORT).show()
+                    } else if (fresh.versionCode <= state.currentManagerVersionCode) {
+                        Toast.makeText(context, alreadyLatest, Toast.LENGTH_SHORT).show()
+                    } else {
+                        freshInfo = fresh
+                        updateDialog.showConfirm(
+                            title = title,
+                            content = fresh.changelog.ifBlank { startDown },
+                            markdown = fresh.changelog.isNotEmpty(),
+                            confirm = updateText
+                        )
+                    }
+                }
+            }
+        }
 
         // Auto-show the changelog dialog once per session when an update is found.
         var autoShown by rememberSaveable { mutableStateOf(false) }
         LaunchedEffect(state.hasUpdate) {
             if (state.hasUpdate && !autoShown) {
                 autoShown = true
-                if (newVersion.changelog.isNotEmpty()) {
-                    updateDialog.showConfirm(
-                        title = title,
-                        content = newVersion.changelog,
-                        markdown = true,
-                        confirm = updateText
-                    )
-                }
+                updateDialog.showConfirm(
+                    title = title,
+                    content = newVersion.changelog.ifBlank { startDown },
+                    markdown = newVersion.changelog.isNotEmpty(),
+                    confirm = updateText
+                )
             }
         }
 
         WarningCard(
             message = stringResource(id = R.string.new_version_available, newVersion.versionCode),
-            level = WarningLevel.Notice
-        ) {
-            if (newVersion.changelog.isEmpty()) {
-                startDownload()
-            } else {
-                updateDialog.showConfirm(
-                    title = title,
-                    content = newVersion.changelog,
-                    markdown = true,
-                    confirm = updateText
-                )
-            }
-        }
+            level = WarningLevel.Notice,
+            onClick = onCheck
+        )
     }
 }
 
