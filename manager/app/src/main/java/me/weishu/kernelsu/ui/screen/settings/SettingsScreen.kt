@@ -1,6 +1,7 @@
 package me.weishu.kernelsu.ui.screen.settings
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +26,7 @@ fun SettingPager(
 ) {
     val viewModel = viewModel<SettingsViewModel>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     val latestIsCurrentPage by rememberUpdatedState(isCurrentPage)
     val initialResumeHandled = rememberSaveable { mutableStateOf(false) }
 
@@ -49,6 +51,10 @@ fun SettingPager(
         },
         onOpenAbout = { navigator.push(Route.About) },
         onSetCheckUpdate = { viewModel.setCheckUpdate(it) },
+        onSetAppLanguage = { tag ->
+            viewModel.setAppLanguage(tag)
+            (context as? android.app.Activity)?.recreate()
+        },
     )
 
     when (LocalUiMode.current) {

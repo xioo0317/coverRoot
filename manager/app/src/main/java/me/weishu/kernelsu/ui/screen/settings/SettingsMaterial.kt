@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import me.weishu.kernelsu.R
+import me.weishu.kernelsu.ui.util.LocaleHelper
 import me.weishu.kernelsu.ui.UiMode
 import me.weishu.kernelsu.ui.component.material.ExpressiveScaffold
 import me.weishu.kernelsu.ui.component.material.SegmentedColumn
@@ -75,6 +76,23 @@ fun SettingPagerMaterial(
                             summary = stringResource(id = R.string.settings_check_update_summary),
                             checked = uiState.checkUpdate,
                             onCheckedChange = actions.onSetCheckUpdate
+                        )
+                    },
+                    {
+                        val langItems = listOf(
+                            stringResource(id = R.string.app_language_follow_system),
+                            "简体中文",
+                            "繁體中文",
+                            "English",
+                        )
+                        val langIndex = LocaleHelper.SUPPORTED.indexOf(uiState.appLanguage).coerceAtLeast(0)
+                        SegmentedDropdownItem(
+                            icon = Icons.Filled.Language,
+                            title = stringResource(id = R.string.settings_app_language),
+                            summary = langItems[langIndex],
+                            items = langItems,
+                            selectedIndex = langIndex,
+                            onItemSelected = { actions.onSetAppLanguage(LocaleHelper.SUPPORTED[it]) }
                         )
                     },
                 )

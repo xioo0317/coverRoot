@@ -41,6 +41,7 @@ class SettingsViewModel(
             val colorSpec = repo.colorSpec
             val uiMode = repo.uiMode
             val checkUpdate = repo.checkUpdate
+            val appLanguage = repo.appLanguage
 
             _uiState.update {
                 it.copy(
@@ -58,6 +59,7 @@ class SettingsViewModel(
                     pageScale = pageScale,
                     moduleDescriptionMaxLines = moduleDescriptionMaxLines,
                     checkUpdate = checkUpdate,
+                    appLanguage = appLanguage,
                     colorStyle = colorStyle,
                     colorSpec = colorSpec,
                 )
@@ -187,5 +189,10 @@ class SettingsViewModel(
     fun setCheckUpdate(enabled: Boolean) {
         repo.checkUpdate = enabled
         _uiState.update { it.copy(checkUpdate = enabled) }
+    }
+
+    fun setAppLanguage(tag: String) {
+        repo.appLanguage = tag
+        _uiState.update { it.copy(appLanguage = tag) }
     }
 }

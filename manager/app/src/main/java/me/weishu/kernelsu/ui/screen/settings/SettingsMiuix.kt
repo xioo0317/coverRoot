@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import me.weishu.kernelsu.R
+import me.weishu.kernelsu.ui.util.LocaleHelper
 import me.weishu.kernelsu.ui.UiMode
 import me.weishu.kernelsu.ui.theme.LocalEnableBlur
 import me.weishu.kernelsu.ui.util.BlurredBar
@@ -102,6 +103,29 @@ fun SettingPagerMiuix(
                             },
                             checked = uiState.checkUpdate,
                             onCheckedChange = actions.onSetCheckUpdate
+                        )
+
+                        val langItems = listOf(
+                            stringResource(id = R.string.app_language_follow_system),
+                            "简体中文",
+                            "繁體中文",
+                            "English",
+                        )
+                        val langIndex = LocaleHelper.SUPPORTED.indexOf(uiState.appLanguage).coerceAtLeast(0)
+                        OverlayDropdownPreference(
+                            title = stringResource(id = R.string.settings_app_language),
+                            summary = langItems[langIndex],
+                            items = langItems,
+                            startAction = {
+                                Icon(
+                                    Icons.Rounded.Language,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                    contentDescription = stringResource(id = R.string.settings_app_language),
+                                    tint = colorScheme.onBackground
+                                )
+                            },
+                            selectedIndex = langIndex,
+                            onSelectedIndexChange = { actions.onSetAppLanguage(LocaleHelper.SUPPORTED[it]) }
                         )
                     }
                 }

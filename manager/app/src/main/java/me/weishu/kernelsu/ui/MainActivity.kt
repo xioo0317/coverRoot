@@ -94,6 +94,11 @@ import top.yukonga.miuix.kmp.utils.pagerGestureOverride
 
 class MainActivity : ComponentActivity() {
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(me.weishu.kernelsu.ui.util.LocaleHelper.wrap(newBase))
+    }
+
+
     private var contentReady = false
     private var splashStartedAt = 0L
     private val splashAnimationDurationMs = 500L

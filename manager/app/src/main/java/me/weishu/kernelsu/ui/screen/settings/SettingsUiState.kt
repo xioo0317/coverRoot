@@ -20,6 +20,7 @@ data class SettingsUiState(
     val pageScale: Float = 1.0f,
     val moduleDescriptionMaxLines: Int = 4,
     val checkUpdate: Boolean = true,
+    val appLanguage: String = "system",
 )
 
 data class SettingsScreenActions(
@@ -27,4 +28,5 @@ data class SettingsScreenActions(
     val onSetUiModeIndex: (Int) -> Unit = {},
     val onOpenAbout: () -> Unit = {},
     val onSetCheckUpdate: (Boolean) -> Unit = {},
+    val onSetAppLanguage: (String) -> Unit = {},
 )

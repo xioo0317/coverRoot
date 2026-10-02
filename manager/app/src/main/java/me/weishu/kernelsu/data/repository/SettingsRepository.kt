@@ -20,4 +20,5 @@ interface SettingsRepository {
     var moduleSortEnabledFirst: Boolean
     var moduleSortActionFirst: Boolean
     var checkUpdate: Boolean
+    var appLanguage: String
 }
