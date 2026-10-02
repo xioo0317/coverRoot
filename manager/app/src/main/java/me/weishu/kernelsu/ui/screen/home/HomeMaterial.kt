@@ -80,6 +80,7 @@ import me.weishu.kernelsu.ui.util.download
 import me.weishu.kernelsu.ui.util.fileNameFromUrl
 import me.weishu.kernelsu.ui.util.checkNewVersion
 import me.weishu.kernelsu.ui.util.module.LatestVersionInfo
+import me.weishu.kernelsu.ui.util.resolveInstallableUri
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.runtime.LaunchedEffect
