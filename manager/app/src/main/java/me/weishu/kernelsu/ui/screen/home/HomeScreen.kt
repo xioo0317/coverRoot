@@ -30,10 +30,12 @@ fun HomePager(
         }
     }
 
+    val onOpenStatusPage = dropUnlessResumed { navigator.push(Route.StatusPage) }
+
     val actions = HomeActions(
         onInstallClick = { /* Install flow is not available in this UI-only shell. */ },
         onOpenUrl = { url -> uriHandler.openUri(url) },
-        onOpenStatusPage = { dropUnlessResumed { navigator.push(Route.StatusPage) } },
+        onOpenStatusPage = onOpenStatusPage,
     )
 
     when (LocalUiMode.current) {
