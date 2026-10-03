@@ -306,4 +306,6 @@
     <string name="update_check_failed">检查更新失败</string>
     <string name="settings_app_language">语言</string>
     <string name="app_language_follow_system">跟随系统</string>
+    <string name="status">状态</string>
+    <string name="status_placeholder">这里还没有内容。</string>
 </resources>

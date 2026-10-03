@@ -67,6 +67,7 @@ import me.weishu.kernelsu.ui.screen.colorpalette.ColorPaletteScreen
 import me.weishu.kernelsu.ui.screen.home.HomePager
 import me.weishu.kernelsu.ui.screen.module.ModulePager
 import me.weishu.kernelsu.ui.screen.settings.SettingPager
+import me.weishu.kernelsu.ui.screen.status.StatusScreen
 import me.weishu.kernelsu.ui.theme.KernelSUTheme
 import me.weishu.kernelsu.ui.theme.LocalColorMode
 import me.weishu.kernelsu.ui.theme.LocalEnableBlur
@@ -186,6 +187,7 @@ class MainActivity : ComponentActivity() {
                             entry<Route.Home>(swipeDismiss = swipeDismiss) { mainScreenEntry() }
                             entry<Route.Module>(swipeDismiss = swipeDismiss) { mainScreenEntry() }
                             entry<Route.Settings>(swipeDismiss = swipeDismiss) { mainScreenEntry() }
+                            entry<Route.StatusPage>(swipeDismiss = swipeDismiss) { StatusScreen() }
                         }
                     }
 

@@ -6,10 +6,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.lifecycle.viewmodel.compose.viewModel
 import me.weishu.kernelsu.ui.LocalUiMode
 import me.weishu.kernelsu.ui.UiMode
 import me.weishu.kernelsu.ui.navigation3.Navigator
+import me.weishu.kernelsu.ui.navigation3.Route
 import me.weishu.kernelsu.ui.viewmodel.HomeViewModel
 
 @Composable
@@ -31,6 +33,7 @@ fun HomePager(
     val actions = HomeActions(
         onInstallClick = { /* Install flow is not available in this UI-only shell. */ },
         onOpenUrl = { url -> uriHandler.openUri(url) },
+        onOpenStatusPage = { dropUnlessResumed { navigator.push(Route.StatusPage) } },
     )
 
     when (LocalUiMode.current) {

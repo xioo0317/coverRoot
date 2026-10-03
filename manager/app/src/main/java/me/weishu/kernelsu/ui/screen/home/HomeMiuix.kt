@@ -343,11 +343,7 @@ private fun StatusCard(
                                 else -> Color(0xFFDFFAE4)
                             }
                         ),
-                        onClick = {
-                            if (!state.isLateLoadMode) {
-                                actions.onInstallClick()
-                            }
-                        },
+                        onClick = { actions.onOpenStatusPage() },
                         showIndication = !state.isLateLoadMode,
                         pressFeedbackType = PressFeedbackType.Tilt
                     ) {
@@ -437,11 +433,7 @@ private fun StatusCard(
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Card(
                         modifier = Modifier.weight(1f),
-                        onClick = {
-                            if (!state.isLateLoadMode) {
-                                actions.onInstallClick()
-                            }
-                        },
+                        onClick = { actions.onOpenStatusPage() },
                         showIndication = !state.isLateLoadMode,
                         pressFeedbackType = PressFeedbackType.Tilt
                     ) {
@@ -472,11 +464,7 @@ private fun StatusCard(
 
             else -> {
                 Card(
-                    onClick = {
-                        if (!state.isLateLoadMode) {
-                            actions.onInstallClick()
-                        }
-                    },
+                    onClick = { actions.onOpenStatusPage() },
                     showIndication = !state.isLateLoadMode,
                     pressFeedbackType = PressFeedbackType.Tilt
                 ) {
