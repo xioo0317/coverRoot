@@ -98,7 +98,7 @@
     <string name="module_update">更新</string>
     <string name="module_downloading">正在下载模块：%s</string>
     <string name="module_start_downloading">开始下载：%s</string>
-    <string name="new_version_available">发现新版本：%s，点击升级！</string>
+    <string name="new_version_available">发现新版本：%s</string>
     <string name="launch_app">启动</string>
     <string name="force_stop_app">强制停止</string>
     <string name="restart_app">重新启动</string>
@@ -308,4 +308,8 @@
     <string name="app_language_follow_system">跟随系统</string>
     <string name="status">状态</string>
     <string name="status_placeholder">这里还没有内容。</string>
+    <string name="sulog_filter_daemon_restart">守护进程重启</string>
+    <string name="sulog_filter_ioctl_grant_root">授予 Root</string>
+    <string name="sulog_filter_root_execve">Root execve</string>
+    <string name="sulog_filter_sucompat">经典 SU</string>
 </resources>

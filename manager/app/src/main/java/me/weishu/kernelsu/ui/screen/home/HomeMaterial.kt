@@ -240,7 +240,10 @@ private fun UpdateCard(
         }
 
         WarningCard(
-            message = stringResource(id = R.string.new_version_available, newVersion.versionCode),
+            message = stringResource(
+                id = R.string.new_version_available,
+                display.version.ifBlank { display.versionCode.toString() }
+            ),
             level = WarningLevel.Notice,
             onClick = onCheck
         )

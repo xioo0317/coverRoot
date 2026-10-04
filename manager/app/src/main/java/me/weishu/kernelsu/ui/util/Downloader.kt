@@ -60,6 +60,7 @@ fun checkNewVersion(): LatestVersionInfo {
                     return LatestVersionInfo()
                 }
                 val json = org.json.JSONObject(response.body.string())
+                val version = json.optString("version")
                 val versionCode = json.optInt("versionCode", 0)
                 val zipUrl = json.optString("zipUrl")
                 val changelogUrl = json.optString("changelog")
@@ -71,7 +72,7 @@ fun checkNewVersion(): LatestVersionInfo {
                             }
                     }.getOrDefault("")
                 } else ""
-                return LatestVersionInfo(versionCode, zipUrl, changelog)
+                return LatestVersionInfo(version = version, versionCode = versionCode, downloadUrl = zipUrl, changelog = changelog)
             }
     }
     return LatestVersionInfo()
