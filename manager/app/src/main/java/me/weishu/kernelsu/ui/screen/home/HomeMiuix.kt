@@ -270,9 +270,14 @@ private fun UpdateCard(
                         Toast.makeText(context, alreadyLatest, Toast.LENGTH_SHORT).show()
                     } else {
                         freshInfo = fresh
+                        // Convert single newlines to Markdown hard breaks so the
+                        // changelog keeps its line layout inside the dialog.
+                        val changelogText = fresh.changelog
+                            .replace("\r\n", "\n")
+                            .replace("\n", "  \n")
                         updateDialog.showConfirm(
                             title = title,
-                            content = fresh.changelog.ifBlank { startDown },
+                            content = changelogText.ifBlank { startDown },
                             markdown = fresh.changelog.isNotEmpty(),
                             confirm = updateText
                         )
