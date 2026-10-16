@@ -36,6 +36,7 @@
 #include <sys/stat.h>
 #include <sys/un.h>
 #include <poll.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <signal.h>
 #include <cerrno>
