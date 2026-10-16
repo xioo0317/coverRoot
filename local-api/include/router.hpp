@@ -1,16 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// router.hpp — Request dispatcher / network layer.
+// router.hpp — Request dispatcher / transport layer.
 //
-// Owns the HTTP server: network interface binding, routes,
-// action parsing and dispatch to tools.cpp.
+// Owns the Unix-domain-socket server: endpoint binding, peer-credential
+// authentication, HTTP/1.1-ish parsing and dispatch to tools.cpp.
 
 #pragma once
 
+#include <string>
+
 namespace router {
 
-// Bind the network interface, register routes and block serving.
+// Bind listening sockets and block serving.
+//   sock_arg empty  -> production endpoints (abstract @local_api + file sock)
+//   sock_arg "@x"   -> abstract socket only   (custom / test)
+//   sock_arg "path" -> file socket only      (test / adb debug)
 // Called once from main().
-int run();
+int run(const std::string& sock_arg = "");
 
 } // namespace router

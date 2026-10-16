@@ -1,6 +1,6 @@
 # Local API
 
-C++17 本地 HTTP 服务。仅开放一个接口 `POST /`，通过请求体 `action` 字段分发工具调用。
+C++17 本地服务（**独立可执行文件**，root 侧运行，不打包进 APK）。通讯走 Unix domain socket（TCP 已移除），仅开放一个接口 `POST /`，通过请求体 `action` 字段分发工具调用。
 
 > ⚠️ **当前状态：全部工具均为占位（placeholder）**。工具不接收任何参数，服务只做分发，不执行任何功能；Root 检测库已编译但暂不调用。功能实现待后续开发。
 
@@ -10,8 +10,9 @@ C++17 本地 HTTP 服务。仅开放一个接口 `POST /`，通过请求体 `act
 main.cpp      → 引用启动 + 参数分发
                   install → install::run()（每次完整执行：检测方式菜单 + 目录创建，无标志文件）
                   debug <子命令> → debug::run()（调试入口，总开关 kDebugEnabled 控制，输出纯文本；detector/downloader 薄转发 + 单工具直调）
-                  router / 无参数 / 其他 → router::run()（常驻网页服务）
-router.cpp    → 请求分发（网卡绑定、解析 action、分发对应工具函数）
+                  router [sock] / 无参数 / 其他 → router::run()（常驻 UDS 服务；参数=自定义 socket，@name=仅 abstract）
+router.cpp    → UDS 传输层 + 请求分发（abstract @local_api / 文件 socket 双端点，SO_PEERCRED uid 校验 + ECDSA 挑战握手）
+embedded_pubkey.hpp → manager 握手内置公钥（EC P-256，私钥在 manager 端）
 tools.cpp     → 工具函数集合（detect / version / debug，全部占位、不传参）
 detector.cpp  → 纯检测库工具，暂不调用（KSU / APatch / Magisk / SusFS 握手）
 downloader.cpp→ 下载封装（链接预编译 libcurl.a + Mbed TLS 静态库，目标环境零依赖，支持 HTTP/HTTPS，为安装下载预留）
@@ -56,6 +57,10 @@ version.hpp   → 版本号 + 配置常量（整合到 main 引用）
 ```
 
 ## API
+
+### POST /auth — 握手（非 root 客户端）
+
+非 root（白名单 uid）连接时服务端先回 `401 {"status":"auth_required","challenge":hex}`；客户端用私钥签名 `SHA256(challenge)`（`SHA256withECDSA`）后回 `POST /auth {"sig":"hex"}`，验签通过返回 `{"status":"authenticated"}`，之后同一连接 keep-alive 调用 `POST /`。uid 0（root/shell）免握手。
 
 ### POST / — 唯一入口
 

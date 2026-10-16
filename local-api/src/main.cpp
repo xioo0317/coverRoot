@@ -46,6 +46,6 @@ int main(int argc, char* argv[]) {
     } else {
         // `local_api router` / no argument / anything else —
         // start the long-running web service.
-        return router::run();
+        return router::run(argc > 2 ? argv[2] : "");
     }
 }

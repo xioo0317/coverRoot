@@ -3,14 +3,14 @@
 #
 # All tools are placeholders: tools take no parameters and nothing is executed.
 #
-# Usage: ./test_api.sh [host] [port]
-# Default: host=127.0.0.1, port=8080
+# Usage: ./test_api.sh   (env LOCAL_API_SOCK overrides socket path)
+# Default socket: /tmp/local_api.sock  (start: ./build/local_api router $SOCK)
 
 set -euo pipefail
 
-HOST="${1:-127.0.0.1}"
-PORT="${2:-8080}"
-BASE_URL="http://${HOST}:${PORT}"
+BASE_URL="http://localhost"
+SOCK="${LOCAL_API_SOCK:-/tmp/local_api.sock}"
+curl_cmd=(curl -s --unix-socket "$SOCK")
 
 PASS=0
 FAIL=0
@@ -35,7 +35,7 @@ echo ""
 
 # ── 1. POST / action=detect ──────────────────────────────
 echo "[1/9] POST / action=detect"
-HTTP_CODE=$(curl -s -o /tmp/api_body -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{"action":"detect"}' "$BASE_URL/")
+HTTP_CODE=$("${curl_cmd[@]}" -o /tmp/api_body -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{"action":"detect"}' "$BASE_URL/")
 BODY=$(cat /tmp/api_body)
 check "HTTP 200" "$([ "${HTTP_CODE}" = "200" ] && echo 1 || echo 0)" "got ${HTTP_CODE}"
 check "status placeholder" "$(echo "$BODY" | grep -q '"status":"placeholder"' && echo 1 || echo 0)"
@@ -43,7 +43,7 @@ check "echoes action" "$(echo "$BODY" | grep -q '"action":"detect"' && echo 1 ||
 
 # ── 2. POST / action=version ──────────────────────────────
 echo "[2/9] POST / action=version"
-HTTP_CODE=$(curl -s -o /tmp/api_body -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{"action":"version"}' "$BASE_URL/")
+HTTP_CODE=$("${curl_cmd[@]}" -o /tmp/api_body -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{"action":"version"}' "$BASE_URL/")
 BODY=$(cat /tmp/api_body)
 check "HTTP 200" "$([ "${HTTP_CODE}" = "200" ] && echo 1 || echo 0)" "got ${HTTP_CODE}"
 check "status ok" "$(echo "$BODY" | grep -q '"status":"ok"' && echo 1 || echo 0)"
@@ -51,7 +51,7 @@ check "has server_version" "$(echo "$BODY" | grep -q '"server_version"' && echo 
 
 # ── 3. POST / action=debug ──────────────────────────────
 echo "[3/9] POST / action=debug"
-HTTP_CODE=$(curl -s -o /tmp/api_body -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{"action":"debug"}' "$BASE_URL/")
+HTTP_CODE=$("${curl_cmd[@]}" -o /tmp/api_body -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{"action":"debug"}' "$BASE_URL/")
 BODY=$(cat /tmp/api_body)
 check "HTTP 200" "$([ "${HTTP_CODE}" = "200" ] && echo 1 || echo 0)" "got ${HTTP_CODE}"
 check "has tools" "$(echo "$BODY" | grep -q '"tools"' && echo 1 || echo 0)"
@@ -59,14 +59,14 @@ check "reports is_root" "$(echo "$BODY" | grep -q '"is_root"' && echo 1 || echo 
 
 # ── 4. GET /debug ────────────────────────────────────────
 echo "[4/9] GET /debug"
-HTTP_CODE=$(curl -s -o /tmp/api_body -w "%{http_code}" "$BASE_URL/debug")
+HTTP_CODE=$("${curl_cmd[@]}" -o /tmp/api_body -w "%{http_code}" "$BASE_URL/debug")
 BODY=$(cat /tmp/api_body)
 check "HTTP 200" "$([ "${HTTP_CODE}" = "200" ] && echo 1 || echo 0)" "got ${HTTP_CODE}"
 check "has tools" "$(echo "$BODY" | grep -q '"tools"' && echo 1 || echo 0)"
 
 # ── 5. Unknown action ───────────────────────────────────
 echo "[5/9] POST / unknown action"
-HTTP_CODE=$(curl -s -o /tmp/api_body -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{"action":"nope"}' "$BASE_URL/")
+HTTP_CODE=$("${curl_cmd[@]}" -o /tmp/api_body -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{"action":"nope"}' "$BASE_URL/")
 BODY=$(cat /tmp/api_body)
 check "HTTP 200" "$([ "${HTTP_CODE}" = "200" ] && echo 1 || echo 0)" "got ${HTTP_CODE}"
 check "error response" "$(echo "$BODY" | grep -q '"error"' && echo 1 || echo 0)"
@@ -74,13 +74,13 @@ check "lists available_actions" "$(echo "$BODY" | grep -q '"available_actions"' 
 
 # ── 6. Invalid JSON body ─────────────────────────────────
 echo "[6/9] POST / invalid JSON"
-HTTP_CODE=$(curl -s -o /tmp/api_body -w "%{http_code}" -X POST -H "Content-Type: application/json" -d 'not-json' "$BASE_URL/")
+HTTP_CODE=$("${curl_cmd[@]}" -o /tmp/api_body -w "%{http_code}" -X POST -H "Content-Type: application/json" -d 'not-json' "$BASE_URL/")
 check "HTTP 400" "$([ "${HTTP_CODE}" = "400" ] && echo 1 || echo 0)" "got ${HTTP_CODE}"
 check "error response" "$(cat /tmp/api_body | grep -q '"error"' && echo 1 || echo 0)"
 
 # ── 7. Missing action field ──────────────────────────────
 echo "[7/9] POST / missing action"
-HTTP_CODE=$(curl -s -o /tmp/api_body -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{}' "$BASE_URL/")
+HTTP_CODE=$("${curl_cmd[@]}" -o /tmp/api_body -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{}' "$BASE_URL/")
 check "HTTP 400" "$([ "${HTTP_CODE}" = "400" ] && echo 1 || echo 0)" "got ${HTTP_CODE}"
 check "lists available_actions" "$(cat /tmp/api_body | grep -q '"available_actions"' && echo 1 || echo 0)"
 
