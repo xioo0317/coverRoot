@@ -92,6 +92,9 @@ jobs:
       contents: read
     needs: [backend, frontend]
     steps:
+      - name: Checkout (install scripts)
+        uses: actions/checkout@v4
+
       - name: Download backend & frontend artifacts
         uses: actions/download-artifact@v4
         with:
@@ -104,6 +107,9 @@ jobs:
           mkdir -p "$STAGE"
           cp dist/backend-local_api/local_api "$STAGE/local_api"
           chmod +x "$STAGE/local_api"
+          cp local-api/scripts/install.sh   "$STAGE/install.sh"
+          cp local-api/scripts/uninstall.sh "$STAGE/uninstall.sh"
+          chmod +x "$STAGE/install.sh" "$STAGE/uninstall.sh"
           find dist/frontend-apks -name '*debug*.apk'  -exec cp {} "$STAGE/coverRoot-debug.apk" \;
           find dist/frontend-apks -name '*release*.apk' -exec cp {} "$STAGE/coverRoot-release-unsigned.apk" \;
           cat > "$STAGE/README.txt" <<EOF
@@ -112,13 +118,25 @@ jobs:
 
           Contents:
             local_api                       daemon binary (Android arm64, UDS + ECDSA handshake)
+            install.sh                      one-shot installer (installs + starts + boot autostart)
+            uninstall.sh                    uninstaller (daemon + autostart module)
             coverRoot-debug.apk             manager app (debug)
             coverRoot-release-unsigned.apk  manager app (release, unsigned)
 
-          Deploy:
-            1. Push local_api to the device, chmod +x, then start it (abstract socket):
-               su -c '/data/adb/local_api/local_api router @local_api'
-            2. Install the manager APK.
+          Deploy (recommended, one command):
+            1. Push the whole bundle folder to the device, e.g. /data/local/tmp/coverRoot
+            2. Run:  su -c 'sh /data/local/tmp/coverRoot/install.sh'
+               - installs the daemon to /data/adb/local_api and starts it
+               - installs a boot autostart module (Magisk / KernelSU / APatch compatible)
+               - prints environment diagnostics (SELinux mode, policy tools)
+            3. Install the manager APK and open the app.
+
+          Uninstall:
+            su -c 'sh /data/adb/local_api/uninstall.sh'
+
+          Manual deploy (no script):
+            cp local_api /data/adb/local_api/ && chmod 755 /data/adb/local_api/local_api
+            su -c '/data/adb/local_api/local_api router @local_api'
             The daemon applies the required SELinux rules on start (root required).
           EOF
           ls -la "$STAGE"
