@@ -2,6 +2,13 @@
 
 基于 [KernelSU](https://github.com/tiann/KernelSU) manager UI 的空壳应用。UI 层完整保留自上游，root / 内核业务已全部移除。
 
+## 仓库结构
+
+- `manager/`：前端 UI（Kotlin / Compose）
+- `local-api/`：后端 C++ 本地服务 `local_api`（CMake 构建，详见 [local-api/README.md](local-api/README.md)）
+
+CI 构建时自动编译 arm64 版 `local_api` 并打包进 APK 的 `jniLibs`（`liblocal_api.so`），host 版在 CI 中跑完整 API 测试。
+
 ## 保留的 UI 能力
 
 - Material 3 Expressive / Miuix 双 UI 模式（运行时切换）
