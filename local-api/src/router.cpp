@@ -241,6 +241,47 @@ void dispatch(int fd, const std::string& method, const std::string& path,
                           {"hint","POST / with {\"action\":\"...\"}  |  GET /debug"}}.dump());
 }
 
+#ifdef __ANDROID__
+// Best-effort SELinux allowance so a non-root app (untrusted_app domain) can
+// connect to the abstract socket we bind in the magisk/root domain. Live rules
+// vanish on reboot; the daemon re-applies them on every start, so persistence
+// is equivalent. Never fatal: ROMs that already allow this just log a warning.
+static bool run_policy_bin(const char* bin, const char* rule) {
+    const pid_t pid = ::fork();
+    if (pid == 0) {
+        ::execl(bin, bin, "--live", rule, (char*)nullptr);
+        _exit(127);
+    }
+    if (pid < 0) return false;
+    int st = 0;
+    if (::waitpid(pid, &st, 0) < 0) return false;
+    return WIFEXITED(st) && WEXITSTATUS(st) == 0;
+}
+
+static void apply_sepolicy_allowance() {
+    static const char* kBins[] = {
+        "magiskpolicy",                       // Magisk / KSU / APatch on PATH
+        "/data/adb/magisk/magiskpolicy",      // Magisk
+        "/data/adb/ksu/bin/magiskpolicy",     // KernelSU
+        "/data/adb/ap/bin/magiskpolicy",      // APatch
+    };
+    static const char* kRules[] = {
+        "allow untrusted_app magisk unix_stream_socket connectto",
+        "allow ksu magisk unix_stream_socket connectto",
+    };
+    for (const char* bin : kBins) {
+        bool all_ok = true;
+        for (const char* rule : kRules) {
+            if (!run_policy_bin(bin, rule)) { all_ok = false; break; }
+        }
+        if (all_ok) return;  // this binary applied all rules; done
+    }
+    std::cerr << "local_api: SELinux connectto allowance not applied "
+                 "(magiskpolicy missing or refused; app connections may be denied)"
+              << std::endl;
+}
+#endif
+
 // One connection = one client lifecycle (auth once, then keep-alive requests).
 void serve_client(int fd) {
     uid_t uid = 0;
@@ -332,6 +373,9 @@ int make_listener(const std::string& spec) {
 
 int run(const std::string& sock_arg) {
     ::signal(SIGPIPE, SIG_IGN);
+#ifdef __ANDROID__
+    apply_sepolicy_allowance();
+#endif
 
     std::vector<std::string> endpoints;
     if (sock_arg.empty()) {
