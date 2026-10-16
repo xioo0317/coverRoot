@@ -92,7 +92,7 @@ internal enum class BadgeTone { Alert, Accent }
 internal data class NavBadge(val count: Int, val tone: BadgeTone)
 
 internal fun badgeFor(index: Int, state: NavigationBadgeState): NavBadge? = when (index) {
-    BottomBarDestination.Module.ordinal -> when {
+    BottomBarDestination.Feature.ordinal -> when {
         state.moduleUpdatableCount > 0 -> NavBadge(state.moduleUpdatableCount, BadgeTone.Alert)
         state.moduleEnabledCount > 0 -> NavBadge(state.moduleEnabledCount, BadgeTone.Accent)
         else -> null

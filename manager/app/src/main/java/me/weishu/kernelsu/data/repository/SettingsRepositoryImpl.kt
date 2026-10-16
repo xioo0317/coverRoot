@@ -63,13 +63,7 @@ class SettingsRepositoryImpl : SettingsRepository {
         get() = prefs.getFloat("page_scale", 1.0f)
         set(value) = prefs.edit { putFloat("page_scale", value) }
 
-    override var moduleSortEnabledFirst: Boolean
-        get() = prefs.getBoolean("module_sort_enabled_first", false)
-        set(value) = prefs.edit { putBoolean("module_sort_enabled_first", value) }
 
-    override var moduleSortActionFirst: Boolean
-        get() = prefs.getBoolean("module_sort_action_first", false)
-        set(value) = prefs.edit { putBoolean("module_sort_action_first", value) }
 
     override var appLanguage: String
         get() = prefs.getString("app_language", "system") ?: "system"

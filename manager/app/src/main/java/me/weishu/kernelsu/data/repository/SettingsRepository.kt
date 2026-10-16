@@ -13,8 +13,6 @@ interface SettingsRepository {
     var enableFloatingBottomBarBlur: Boolean
     var navigationRailExpanded: Boolean
     var pageScale: Float
-    var moduleSortEnabledFirst: Boolean
-    var moduleSortActionFirst: Boolean
     var checkUpdate: Boolean
     var appLanguage: String
 }

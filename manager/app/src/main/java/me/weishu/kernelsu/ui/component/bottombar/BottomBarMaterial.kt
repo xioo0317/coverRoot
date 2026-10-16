@@ -33,7 +33,7 @@ fun BottomBarMaterial(navigationBadge: NavigationBadgeState) {
 
     val items = listOf(
         Triple(R.string.home, Icons.Filled.Home, Icons.Outlined.Home),
-        Triple(R.string.module, Icons.Filled.Extension, Icons.Outlined.Extension),
+        Triple(R.string.feature, Icons.Filled.Extension, Icons.Outlined.Extension),
         Triple(R.string.settings, Icons.Filled.Settings, Icons.Outlined.Settings)
     )
 

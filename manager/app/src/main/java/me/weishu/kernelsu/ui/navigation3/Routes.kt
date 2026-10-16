@@ -21,7 +21,7 @@ sealed interface Route : NavKey, Parcelable {
 
     @Parcelize
     @Serializable
-    data object Module : Route
+    data object Feature : Route
 
     @Parcelize
     @Serializable
