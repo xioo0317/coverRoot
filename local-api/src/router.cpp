@@ -266,9 +266,15 @@ static void apply_sepolicy_allowance() {
         "/data/adb/ksu/bin/magiskpolicy",     // KernelSU
         "/data/adb/ap/bin/magiskpolicy",      // APatch
     };
+    // Client side: appdomain attribute covers every app domain (untrusted_app,
+    // untrusted_app_25..32, platform_app, ...). Actual access control happens
+    // in the daemon via SO_PEERCRED uid + ECDSA handshake, so a wide connectto
+    // allowance does not weaken security. Server side: the domain the su
+    // binary runs in (magisk / ksu / apatch); apply all, unknown ones just fail.
     static const char* kRules[] = {
-        "allow untrusted_app magisk unix_stream_socket connectto",
-        "allow ksu magisk unix_stream_socket connectto",
+        "allow appdomain magisk unix_stream_socket connectto",
+        "allow appdomain ksu unix_stream_socket connectto",
+        "allow appdomain apatch unix_stream_socket connectto",
     };
     for (const char* bin : kBins) {
         bool all_ok = true;
@@ -351,7 +357,11 @@ int make_listener(const std::string& spec) {
         return -1;
     }
     if (abstract) {
-        ::memcpy(addr.sun_path, spec.data() + 1, name_len);
+        // Android's LocalSocket (ABSTRACT) puts the name at sun_path[1] with a
+        // leading NUL at sun_path[0]; match that byte-for-byte or the names
+        // never compare equal inside the kernel.
+        addr.sun_path[0] = '\0';
+        ::memcpy(addr.sun_path + 1, spec.data() + 1, name_len);
     } else {
         ::unlink(spec.c_str());
         ::memcpy(addr.sun_path, spec.c_str(), name_len);

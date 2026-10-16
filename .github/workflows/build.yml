@@ -22,13 +22,22 @@ jobs:
           ndk-version: r25b
           add-to-path: false
 
-      - name: Build local_api (host) + smoke test
+      - name: Build local_api (host) + smoke test (file socket)
         run: |
           cmake -S local-api -B local-api/build -DCMAKE_BUILD_TYPE=Release
           cmake --build local-api/build -j$(nproc)
           (LOCAL_API_ALLOW_ALL=1 ./local-api/build/local_api router /tmp/local_api.sock > /tmp/api.log 2>&1 &)
           sleep 2
           bash local-api/test_api.sh
+          pkill -x local_api || true
+
+      # The abstract namespace is the production path on Android; keep it tested
+      # (a byte-level name mismatch between C bind and Java LocalSocket is silent).
+      - name: Smoke test (abstract socket)
+        run: |
+          (LOCAL_API_ALLOW_ALL=1 ./local-api/build/local_api router @local_api-test > /tmp/api-abs.log 2>&1 &)
+          sleep 2
+          LOCAL_API_SOCK=@local_api-test bash local-api/test_api.sh
           pkill -x local_api || true
 
       - name: Build local_api (android arm64)
@@ -107,8 +116,8 @@ jobs:
             coverRoot-release-unsigned.apk  manager app (release, unsigned)
 
           Deploy:
-            1. Push local_api to the device, chmod +x, then start it:
-               su -c '/data/adb/local_api/local_api router local_api'
+            1. Push local_api to the device, chmod +x, then start it (abstract socket):
+               su -c '/data/adb/local_api/local_api router @local_api'
             2. Install the manager APK.
             The daemon applies the required SELinux rules on start (root required).
           EOF

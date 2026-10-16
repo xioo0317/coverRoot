@@ -47,8 +47,16 @@ class HomeViewModel : ViewModel() {
                     is LocalApiClient.ApiResult.Success -> it.copy(
                         backendOnline = true,
                         backendVersion = result.json.optString("server_version", null),
+                        backendReason = null,
                     )
-                    else -> it.copy(backendOnline = false, backendVersion = null)
+                    is LocalApiClient.ApiResult.ApiError -> it.copy(
+                        backendOnline = false, backendVersion = null,
+                        backendReason = "HTTP ${result.code}",
+                    )
+                    is LocalApiClient.ApiResult.Unreachable -> it.copy(
+                        backendOnline = false, backendVersion = null,
+                        backendReason = result.reason.ifBlank { "connect failed" },
+                    )
                 }
             }
         }

@@ -10,7 +10,12 @@ set -euo pipefail
 
 BASE_URL="http://localhost"
 SOCK="${LOCAL_API_SOCK:-/tmp/local_api.sock}"
-curl_cmd=(curl -s --unix-socket "$SOCK")
+# Abstract sockets (spec starts with '@') need curl's --abstract-unix-socket.
+if [ "${SOCK#@}" != "$SOCK" ]; then
+    curl_cmd=(curl -s --abstract-unix-socket "${SOCK#@}")
+else
+    curl_cmd=(curl -s --unix-socket "$SOCK")
+fi
 
 PASS=0
 FAIL=0

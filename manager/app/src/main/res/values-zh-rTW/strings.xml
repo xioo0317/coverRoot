@@ -4,6 +4,7 @@
     <string name="home_not_installed">尚未安裝</string>
     <string name="home_backend_down">後端服務未執行</string>
     <string name="home_backend_down_summary">local_api 未連線，請確認守護進程（v1.16.1+）已啟動</string>
+    <string name="home_backend_down_reason">原因：%s</string>
     <string name="home_click_to_install">點選開始安裝</string>
     <string name="home_working">已開始運作</string>
     <string name="home_working_version">版本：%s</string>

@@ -27,6 +27,8 @@ data class HomeUiState(
     /** local_api 后端状态: null=探测中, true=在线, false=不可达 */
     val backendOnline: Boolean? = null,
     val backendVersion: String? = null,
+    /** 后端不可达时的具体原因（SELinux/未运行/超时等），用于状态卡诊断展示 */
+    val backendReason: String? = null,
 ) {
     val isSELinuxPermissive: Boolean
         get() = systemInfo.selinuxStatus == "Permissive"

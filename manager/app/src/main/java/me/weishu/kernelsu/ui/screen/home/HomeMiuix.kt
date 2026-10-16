@@ -329,7 +329,10 @@ private fun StatusCard(
                 ) {
                     BasicComponent(
                         title = stringResource(R.string.home_backend_down),
-                        summary = stringResource(R.string.home_backend_down_summary),
+                        summary = run {
+                            val base = stringResource(R.string.home_backend_down_summary)
+                            state.backendReason?.let { "$base\n${stringResource(R.string.home_backend_down_reason, it)}" } ?: base
+                        },
                     )
                 }
             }
