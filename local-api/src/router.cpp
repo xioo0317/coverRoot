@@ -146,16 +146,20 @@ bool hex_decode(const std::string& in, std::vector<unsigned char>& out) {
     return true;
 }
 
-// Verify SHA256withECDSA(hex-encoded DER signature) over the challenge.
-bool verify_signature(const std::string& challenge, const std::string& sig_hex) {
+// Verify SHA256withECDSA over the challenge.
+// Both the challenge and the signature arrive hex-encoded; the client signs
+// SHA256 of the raw 32 challenge bytes (Java SHA256withECDSA semantics), so
+// decode both before hashing / verifying.
+bool verify_signature(const std::string& challenge_hex, const std::string& sig_hex) {
     std::vector<unsigned char> sig;
+    std::vector<unsigned char> challenge;
     if (!hex_decode(sig_hex, sig) || sig.empty()) return false;
+    if (!hex_decode(challenge_hex, challenge) || challenge.empty()) return false;
 
     unsigned char hash[32];
     const mbedtls_md_info_t* md = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
     if (md == nullptr ||
-        mbedtls_md(md, reinterpret_cast<const unsigned char*>(challenge.data()),
-                   challenge.size(), hash) != 0) return false;
+        mbedtls_md(md, challenge.data(), challenge.size(), hash) != 0) return false;
 
     mbedtls_pk_context pk;
     mbedtls_pk_init(&pk);
