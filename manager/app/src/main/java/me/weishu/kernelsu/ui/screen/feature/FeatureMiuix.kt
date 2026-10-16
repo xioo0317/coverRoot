@@ -76,7 +76,7 @@ fun FeaturePagerMiuix(
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
-                .overScrollVertical(scrollBehavior)
+                .overScrollVertical()
                 .padding(top = innerPadding.calculateTopPadding())
                 .padding(bottom = bottomInnerPadding),
         ) {
@@ -112,7 +112,7 @@ fun FeaturePagerMiuix(
                             Text(
                                 text = "local_api @local_api / local_api.sock",
                                 fontSize = 12.sp,
-                                color = colorScheme.onSurfaceVariant,
+                                color = colorScheme.onSurfaceVariantSummary,
                             )
                         }
                     }
@@ -132,7 +132,7 @@ fun FeaturePagerMiuix(
                         Text(
                             text = feature.subtitle,
                             fontSize = 13.sp,
-                            color = colorScheme.onSurfaceVariant,
+                            color = colorScheme.onSurfaceVariantSummary,
                         )
                         if (result != null && result.prettyJson.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
