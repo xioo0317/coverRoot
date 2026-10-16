@@ -34,7 +34,7 @@ jobs:
         run: |
           cmake -S local-api -B local-api/build -DCMAKE_BUILD_TYPE=Release
           cmake --build local-api/build -j$(nproc)
-          (./local-api/build/local_api router /tmp/local_api.sock > /tmp/api.log 2>&1 &)
+          (LOCAL_API_ALLOW_ALL=1 ./local-api/build/local_api router /tmp/local_api.sock > /tmp/api.log 2>&1 &)
           sleep 2
           bash local-api/test_api.sh
           pkill -x local_api || true

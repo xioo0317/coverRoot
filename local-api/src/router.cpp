@@ -96,12 +96,15 @@ void respond(int fd, int code, const std::string& body) {
 }
 
 // Kernel-reported peer uid check: root always, others only via whitelist file.
+// LOCAL_API_ALLOW_ALL=1 opens the socket to any local peer (test hosts only;
+// production Android never sets it).
 bool peer_allowed(int fd, uid_t& out_uid) {
     PeerCred cred{};
     socklen_t len = sizeof(cred);
     if (::getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &len) != 0) return false;
     out_uid = cred.uid;
     if (cred.uid == 0) return true;
+    if (const char* open = ::getenv("LOCAL_API_ALLOW_ALL"); open && open[0] == '1') return true;
 
     std::ifstream in(kAllowFile);
     if (!in) return false;
