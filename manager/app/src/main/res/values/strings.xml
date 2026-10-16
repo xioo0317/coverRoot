@@ -98,4 +98,11 @@
     <string name="app_language_follow_system">Follow system</string>
     <string name="status">Status</string>
     <string name="status_placeholder">Nothing here yet.</string>
+    <string name="download_channel_name">Module Downloads</string>
+    <string name="download_complete_title">Download complete</string>
+    <string name="download_complete_content">%s downloaded successfully</string>
+    <string name="download_failed_title">Download failed</string>
+    <string name="download_failed_content">Failed to download %s</string>
+    <string name="download_cancel">Cancel</string>
+    <string name="download_install">Install</string>
 </resources>

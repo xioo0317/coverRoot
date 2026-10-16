@@ -96,4 +96,11 @@
     <string name="app_language_follow_system">跟随系统</string>
     <string name="status">状态</string>
     <string name="status_placeholder">这里还没有内容。</string>
+    <string name="download_channel_name">模块下载</string>
+    <string name="download_complete_title">下载完成</string>
+    <string name="download_complete_content">%s 下载成功</string>
+    <string name="download_failed_title">下载失败</string>
+    <string name="download_failed_content">%s 下载失败</string>
+    <string name="download_cancel">取消</string>
+    <string name="download_install">安装</string>
 </resources>

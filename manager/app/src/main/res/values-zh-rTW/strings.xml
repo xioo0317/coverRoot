@@ -96,4 +96,11 @@
     <string name="nav_rail_expand">展開側邊欄</string>
     <string name="update_already_latest">已是最新版本</string>
     <string name="update_check_failed">檢查更新失敗</string>
+    <string name="download_cancel">取消</string>
+    <string name="download_channel_name">模組下載</string>
+    <string name="download_complete_content">%s 已成功下載</string>
+    <string name="download_complete_title">下載完成</string>
+    <string name="download_failed_content">無法下載 %s</string>
+    <string name="download_failed_title">下載失敗</string>
+    <string name="download_install">安裝</string>
 </resources>
