@@ -45,6 +45,8 @@ class FeatureViewModel : ViewModel() {
         val backendOnline: Boolean? = null,
         val backendVersion: String? = null,
         val apiVersion: String? = null,
+        /** 不可达时的底层原因（SELinux/未运行等），随状态卡与 snackbar 展示 */
+        val backendReason: String? = null,
         val features: List<Feature> = listOf(
             Feature("version", "版本信息", "获取后端服务版本与 API 版本", Feature.Kind.ACTION),
             Feature("detect", "环境检测", "检测 root 环境状态（KSU / APatch / Magisk / SusFS）", Feature.Kind.ACTION),
@@ -84,11 +86,19 @@ class FeatureViewModel : ViewModel() {
                             backendOnline = true,
                             backendVersion = r.json.optString("server_version"),
                             apiVersion = r.json.optString("api_version"),
+                            backendReason = null,
                         )
                     }
                 }
                 else -> {
-                    _uiState.update { it.copy(isRefreshing = false, backendOnline = false) }
+                    _uiState.update {
+                        it.copy(
+                            isRefreshing = false,
+                            backendOnline = false,
+                            backendVersion = null,
+                            backendReason = (r as? LocalApiClient.ApiResult.Unreachable)?.reason,
+                        )
+                    }
                 }
             }
         }

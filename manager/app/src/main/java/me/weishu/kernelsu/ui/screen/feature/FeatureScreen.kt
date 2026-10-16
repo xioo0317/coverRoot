@@ -50,7 +50,7 @@ fun FeaturePager(
 internal fun formatBackendSummary(state: FeatureViewModel.UiState): String {
     return when (state.backendOnline) {
         true -> "后端在线 · ${state.backendVersion ?: "unknown"} (API ${state.apiVersion ?: "?"})"
-        false -> "后端不可达"
+        false -> state.backendReason?.let { "后端不可达\n$it" } ?: "后端不可达"
         null -> "检测中…"
     }
 }

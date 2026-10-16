@@ -76,12 +76,14 @@ object LocalApiClient {
 
     /** 依次尝试抽象 socket（生产主通道）-> 文件 socket（调试通道）。 */
     private fun request(method: String, path: String, body: String?): ApiResult {
+        val diag = StringBuilder()
         for ((name, abstract) in listOf(ABSTRACT_SOCKET to true, FILE_SOCKET to false)) {
-            val result = exchangeWithAuth(name, abstract, method, path, body)
+            val result = exchangeWithAuth(name, abstract, method, path, body, diag)
             if (result != null) return result // 通道可达（含业务错误），直接返回
+            diag.append('\n')
         }
         return ApiResult.Unreachable(
-            "无法连接后端服务（@local_api / $FILE_SOCKET 均连接失败，后端可能未运行）"
+            "无法连接后端服务（两条通道均失败）\n$diag"
         )
     }
 
@@ -95,6 +97,7 @@ object LocalApiClient {
         method: String,
         path: String,
         body: String?,
+        diag: StringBuilder,
     ): ApiResult? {
         val socket = LocalSocket()
         try {
@@ -150,7 +153,11 @@ object LocalApiClient {
             }
             return parseResponse(code, payload)
         } catch (e: IOException) {
-            return null // 通道不可达，尝试下一通道
+            // 通道不可达；把底层原因（如 Permission denied / Connection refused）
+            // 带回给调用方做诊断，然后尝试下一通道。
+            diag.append(if (abstract) "@$socketName: " else "$socketName: ")
+            diag.append(e.message ?: "I/O error")
+            return null
         } catch (e: Exception) {
             // 客户端自身异常（如私钥解析失败）：显式暴露而非伪装成不可达
             return ApiResult.ApiError(-1, "客户端异常: ${e.message}", null)
