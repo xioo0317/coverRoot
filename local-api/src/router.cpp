@@ -249,7 +249,12 @@ void serve_client(int fd) {
     }
 
     // Layer 2: non-root peers must complete the ECDSA challenge handshake.
-    const bool need_auth = (uid != 0);
+    // (LOCAL_API_ALLOW_ALL=1 test mode skips it along with the uid check.)
+    const bool trust_all = [] {
+        const char* o = ::getenv("LOCAL_API_ALLOW_ALL");
+        return o != nullptr && o[0] == '1';
+    }();
+    const bool need_auth = (uid != 0) && !trust_all;
     bool authenticated = !need_auth;
     std::string challenge;
     if (need_auth) {
