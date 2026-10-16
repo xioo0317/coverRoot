@@ -7,22 +7,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  # ---------- 后端编译：local_api（host 冒烟回归 + Android arm64 交叉编译） ----------
+  backend:
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
@@ -48,24 +40,83 @@ jobs:
           cmake --build local-api/build-android -j$(nproc)
           file local-api/build-android/local_api | grep -q aarch64 && echo "✓ local_api (arm64) built as standalone executable" || (echo "✗ not arm64"; exit 1)
 
+      - name: Upload backend binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-local_api
+          path: local-api/build-android/local_api
+          retention-days: 1
+
+  # ---------- 前端编译：manager APK（debug + release） ----------
+  frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Build with Gradle
         working-directory: manager
         run: ./gradlew --no-daemon assembleDebug assembleRelease
 
-      - name: Upload local_api (android arm64)
+      - name: Upload frontend APKs
         uses: actions/upload-artifact@v4
         with:
-          name: local_api-android-arm64
-          path: local-api/build-android/local_api
+          name: frontend-apks
+          path: manager/app/build/outputs/apk/*/*.apk
+          retention-days: 1
 
-      - name: Upload Debug APK
-        uses: actions/upload-artifact@v4
+  # ---------- 汇总：前端 + 后端合并成一个压缩包 ----------
+  package:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: [backend, frontend]
+    steps:
+      - name: Download backend & frontend artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: coverRoot-debug
-          path: manager/app/build/outputs/apk/debug/*.apk
+          path: dist
 
-      - name: Upload Release APK
+      - name: Assemble bundle
+        run: |
+          set -e
+          STAGE=bundle/coverRoot-build-${{ github.run_number }}
+          mkdir -p "$STAGE"
+          cp dist/backend-local_api/local_api "$STAGE/local_api"
+          chmod +x "$STAGE/local_api"
+          find dist/frontend-apks -name '*debug*.apk'  -exec cp {} "$STAGE/coverRoot-debug.apk" \;
+          find dist/frontend-apks -name '*release*.apk' -exec cp {} "$STAGE/coverRoot-release-unsigned.apk" \;
+          cat > "$STAGE/README.txt" <<EOF
+          coverRoot build #${{ github.run_number }}
+          commit: ${{ github.sha }}
+
+          Contents:
+            local_api                       daemon binary (Android arm64, UDS + ECDSA handshake)
+            coverRoot-debug.apk             manager app (debug)
+            coverRoot-release-unsigned.apk  manager app (release, unsigned)
+
+          Deploy:
+            1. Push local_api to the device, chmod +x, then start it:
+               su -c '/data/adb/local_api/local_api router local_api'
+            2. Install the manager APK.
+            The daemon applies the required SELinux rules on start (root required).
+          EOF
+          ls -la "$STAGE"
+
+      - name: Upload bundle
         uses: actions/upload-artifact@v4
         with:
-          name: coverRoot-release-unsigned
-          path: manager/app/build/outputs/apk/release/*.apk
+          name: coverRoot-bundle-${{ github.run_number }}
+          path: bundle
+          retention-days: 30
