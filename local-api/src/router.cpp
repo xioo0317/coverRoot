@@ -368,6 +368,38 @@ void serve_client(int fd) {
     ::close(fd);
 }
 
+// Returns "pid N" / "live listener" if something is already serving on this
+// endpoint, or "" when the endpoint is free (or holds only a stale socket).
+std::string probe_live_instance(const std::string& spec) {
+    if (spec.empty()) return "";
+    const bool abstract = spec[0] == '@';
+    const int fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
+    if (fd < 0) return "";
+    sockaddr_un sa{};
+    sa.sun_family = AF_UNIX;
+    const size_t name_len = abstract ? spec.size() - 1 : spec.size();
+    if (abstract) {
+        sa.sun_path[0] = '\0';
+        ::memcpy(sa.sun_path + 1, spec.data() + 1, name_len);
+    } else {
+        ::memcpy(sa.sun_path, spec.c_str(), name_len);
+    }
+    const socklen_t len = static_cast<socklen_t>(
+        offsetof(sockaddr_un, sun_path) + name_len + (abstract ? 1 : 0));
+    std::string out;
+    if (::connect(fd, reinterpret_cast<sockaddr*>(&sa), len) == 0) {
+        PeerCred pc{};
+        socklen_t pl = sizeof(pc);
+        if (::getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &pc, &pl) == 0 && pc.pid > 0) {
+            out = "pid " + std::to_string(pc.pid);
+        } else {
+            out = "live listener";
+        }
+    }
+    ::close(fd);
+    return out;
+}
+
 int make_listener(const std::string& spec) {
     const int fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
     if (fd < 0) return -1;
@@ -387,6 +419,8 @@ int make_listener(const std::string& spec) {
         addr.sun_path[0] = '\0';
         ::memcpy(addr.sun_path + 1, spec.data() + 1, name_len);
     } else {
+        // Guarded by probe_live_instance() in run(): reaching here means no
+        // live daemon holds this path, so unlink only cleans a stale socket.
         ::unlink(spec.c_str());
         ::memcpy(addr.sun_path, spec.c_str(), name_len);
     }
@@ -417,6 +451,19 @@ int run(const std::string& sock_arg) {
         endpoints = {kAbstractName, kDefaultSock};
     } else {
         endpoints = {sock_arg};
+    }
+
+    // Single-instance guard. Previously a filesystem endpoint unlinked the old
+    // socket before binding, which silently orphaned the running daemon and let
+    // duplicate local_api processes pile up across restarts. Now any live
+    // instance on a requested endpoint stops us from starting another copy.
+    for (const auto& ep : endpoints) {
+        const std::string live = probe_live_instance(ep);
+        if (live.empty()) continue;
+        std::cerr << local_api::APP_NAME << ": already running (" << live << ") on "
+                  << ep << " — not starting a second copy. Kill it first with:"
+                     " pkill -x local_api" << std::endl;
+        return 0;
     }
 
     std::vector<pollfd> pfds;
