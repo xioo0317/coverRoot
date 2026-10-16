@@ -247,16 +247,26 @@ void dispatch(int fd, const std::string& method, const std::string& path,
 // connect to the abstract socket we bind in the magisk/root domain. Live rules
 // vanish on reboot; the daemon re-applies them on every start, so persistence
 // is equivalent. Never fatal: ROMs that already allow this just log a warning.
-static bool run_policy_bin(const char* bin, const char* rule) {
+// Runs one magiskpolicy rule. Returns false and fills `detail` with the
+// failure mode (exec-not-found / exit code) on failure.
+static bool run_policy_bin(const char* bin, const char* rule, std::string& detail) {
     const pid_t pid = ::fork();
     if (pid == 0) {
-        ::execl(bin, bin, "--live", rule, (char*)nullptr);
-        _exit(127);
+        // execlp so a bare "magiskpolicy" on PATH works (execl never searches).
+        ::execlp(bin, bin, "--live", rule, (char*)nullptr);
+        _exit(errno == ENOENT ? 127 : 126);
     }
-    if (pid < 0) return false;
+    if (pid < 0) { detail = "fork failed"; return false; }
     int st = 0;
-    if (::waitpid(pid, &st, 0) < 0) return false;
-    return WIFEXITED(st) && WEXITSTATUS(st) == 0;
+    if (::waitpid(pid, &st, 0) < 0) { detail = "waitpid failed"; return false; }
+    if (WIFEXITED(st)) {
+        const int code = WEXITSTATUS(st);
+        if (code == 0) return true;
+        detail = code == 127 ? "binary not found" : "exit " + std::to_string(code);
+        return false;
+    }
+    detail = "killed by signal " + std::to_string(WTERMSIG(st));
+    return false;
 }
 
 static void apply_sepolicy_allowance() {
@@ -270,22 +280,36 @@ static void apply_sepolicy_allowance() {
     // untrusted_app_25..32, platform_app, ...). Actual access control happens
     // in the daemon via SO_PEERCRED uid + ECDSA handshake, so a wide connectto
     // allowance does not weaken security. Server side: the domain the su
-    // binary runs in (magisk / ksu / apatch); apply all, unknown ones just fail.
+    // binary runs in (magisk / ksu / apatch). Rules are applied per-bin and
+    // failures are tolerated individually: a ROM without the "apatch" type
+    // must not make us report total failure when magisk/ksu rules went through.
     static const char* kRules[] = {
         "allow appdomain magisk unix_stream_socket connectto",
         "allow appdomain ksu unix_stream_socket connectto",
         "allow appdomain apatch unix_stream_socket connectto",
     };
+    int applied = 0;
+    std::string failures;
     for (const char* bin : kBins) {
-        bool all_ok = true;
         for (const char* rule : kRules) {
-            if (!run_policy_bin(bin, rule)) { all_ok = false; break; }
+            std::string detail;
+            if (run_policy_bin(bin, rule, detail)) {
+                ++applied;
+            } else if (applied == 0) {
+                // Only the first binary's failures matter for diagnosis; the
+                // later fallback bins are expected to be missing on most ROMs.
+                failures += "\n  [" + std::string(bin) + "] " + rule + " -> " + detail;
+            }
         }
-        if (all_ok) return;  // this binary applied all rules; done
+        if (applied >= static_cast<int>(sizeof(kRules) / sizeof(kRules[0]))) break;  // fully applied
     }
-    std::cerr << "local_api: SELinux connectto allowance not applied "
-                 "(magiskpolicy missing or refused; app connections may be denied)"
-              << std::endl;
+    if (applied > 0) {
+        std::cout << local_api::APP_NAME << ": SELinux connectto allowance applied ("
+                  << applied << " rule instances)" << std::endl;
+    } else {
+        std::cerr << "local_api: SELinux connectto allowance NOT applied;"
+                     " app connections may be denied. Details:" << failures << std::endl;
+    }
 }
 #endif
 
@@ -406,6 +430,31 @@ int run(const std::string& sock_arg) {
     if (pfds.empty()) {
         std::cerr << "no listen socket available\n";
         return 1;
+    }
+
+    // Self-check: connect to each abstract listener the way an Android
+    // LocalSocket does (leading NUL at sun_path[0], name at [1]). A byte-level
+    // name mismatch shows up here on the device instead of in the field.
+    for (const auto& ep : endpoints) {
+        if (ep.empty() || ep[0] != '@') continue;
+        const int cfd = ::socket(AF_UNIX, SOCK_STREAM, 0);
+        if (cfd < 0) continue;
+        sockaddr_un sa{};
+        sa.sun_family = AF_UNIX;
+        const size_t n = ep.size() - 1;
+        sa.sun_path[0] = '\0';
+        ::memcpy(sa.sun_path + 1, ep.data() + 1, n);
+        const socklen_t salen =
+            static_cast<socklen_t>(offsetof(sockaddr_un, sun_path) + 1 + n);
+        if (::connect(cfd, reinterpret_cast<sockaddr*>(&sa), salen) == 0) {
+            std::cout << local_api::APP_NAME << ": abstract self-check ok (" << ep << ")"
+                      << std::endl;
+        } else {
+            std::cerr << local_api::APP_NAME << ": abstract self-check FAILED (" << ep
+                      << "): errno=" << errno
+                      << " — Android clients will not reach this listener" << std::endl;
+        }
+        ::close(cfd);
     }
 
     for (;;) {
