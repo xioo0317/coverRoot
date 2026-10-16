@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.weishu.kernelsu.BuildConfig
 import me.weishu.kernelsu.data.repository.SettingsRepositoryImpl
+import me.weishu.kernelsu.data.remote.LocalApiClient
 import me.weishu.kernelsu.getKernelVersion
 import me.weishu.kernelsu.ksuApp
 import me.weishu.kernelsu.ui.screen.home.HomeUiState
@@ -33,6 +34,26 @@ class HomeViewModel : ViewModel() {
     // turns off the check-update switch in settings.
     private var updateChecked = false
 
+    init {
+        probeBackend()
+    }
+
+    /** Probe local_api backend availability asynchronously; never blocks first frame. */
+    private fun probeBackend() {
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) { LocalApiClient.executeAction("version") }
+            _uiState.update {
+                when (result) {
+                    is LocalApiClient.ApiResult.Success -> it.copy(
+                        backendOnline = true,
+                        backendVersion = result.json.optString("server_version", null),
+                    )
+                    else -> it.copy(backendOnline = false, backendVersion = null)
+                }
+            }
+        }
+    }
+
     fun refresh() {
         viewModelScope.launch {
             val baseState = withContext(Dispatchers.IO) { buildState() }
@@ -49,6 +70,7 @@ class HomeViewModel : ViewModel() {
                 // Check-update disabled: clear cached info so the card hides.
                 _uiState.update { baseState }
             }
+            probeBackend()
         }
     }
 

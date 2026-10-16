@@ -320,6 +320,20 @@ private fun StatusCard(
 ) {
     Column {
         when {
+            // Backend down: reuse the not-installed card style, plain text instead of an icon.
+            state.ksuVersion != null && state.backendOnline == false -> {
+                Card(
+                    onClick = { actions.onOpenStatusPage() },
+                    showIndication = !state.isLateLoadMode,
+                    pressFeedbackType = PressFeedbackType.Tilt
+                ) {
+                    BasicComponent(
+                        title = stringResource(R.string.home_backend_down),
+                        summary = stringResource(R.string.home_backend_down_summary),
+                    )
+                }
+            }
+
             state.ksuVersion != null -> {
                 val workingState = buildString {
                     if (state.isSafeMode) {

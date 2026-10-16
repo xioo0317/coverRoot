@@ -1,7 +1,6 @@
 package me.weishu.kernelsu.ui.screen.feature
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -105,8 +104,8 @@ fun FeaturePagerMaterial(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clickable { viewModel.executeFeature(feature) },
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    onClick = { viewModel.executeFeature(feature) },
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                     ),

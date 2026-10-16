@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -275,25 +276,30 @@ private fun StatusCard(
     Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
         val ksuActive = state.ksuVersion != null
         val notInstalled = !ksuActive && state.kernelVersion.isGKI()
+        // Backend down only matters when KSU itself is fine; reuse the not-installed card style.
+        val backendDown = ksuActive && state.backendOnline == false
 
-        val containerColor = if (ksuActive) {
-            MaterialTheme.colorScheme.secondaryContainer
-        } else {
-            MaterialTheme.colorScheme.errorContainer
+        val containerColor = when {
+            backendDown -> MaterialTheme.colorScheme.errorContainer
+            ksuActive -> MaterialTheme.colorScheme.secondaryContainer
+            else -> MaterialTheme.colorScheme.errorContainer
         }
         val contentColor = MaterialTheme.colorScheme.contentColorFor(containerColor)
 
         val statusIcon = when {
+            backendDown -> Icons.Rounded.CloudOff
             ksuActive -> Icons.Rounded.CheckCircle
             notInstalled -> Icons.Rounded.Warning
             else -> Icons.Rounded.Block
         }
         val statusTitle = when {
+            backendDown -> stringResource(R.string.home_backend_down)
             ksuActive -> stringResource(R.string.home_working)
             notInstalled -> stringResource(R.string.home_not_installed)
             else -> stringResource(R.string.home_unsupported)
         }
         val statusSummary = when {
+            backendDown -> stringResource(R.string.home_backend_down_summary)
             ksuActive -> stringResource(R.string.home_working_version, "${state.ksuVersion}-${state.kernelUAPIVersion}")
             notInstalled -> stringResource(R.string.home_click_to_install)
             else -> stringResource(R.string.home_unsupported_reason)

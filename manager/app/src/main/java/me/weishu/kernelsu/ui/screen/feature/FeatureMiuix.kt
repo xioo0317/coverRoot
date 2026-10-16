@@ -124,8 +124,9 @@ fun FeaturePagerMiuix(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clickable { viewModel.executeFeature(feature) },
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    onClick = { viewModel.executeFeature(feature) },
+                    showIndication = true,
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(text = feature.title, fontSize = 16.sp)

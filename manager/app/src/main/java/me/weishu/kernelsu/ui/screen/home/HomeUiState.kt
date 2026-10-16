@@ -24,6 +24,9 @@ data class HomeUiState(
     val latestVersionInfo: LatestVersionInfo,
     val currentManagerVersionCode: Long,
     val systemInfo: SystemInfo,
+    /** local_api 后端状态: null=探测中, true=在线, false=不可达 */
+    val backendOnline: Boolean? = null,
+    val backendVersion: String? = null,
 ) {
     val isSELinuxPermissive: Boolean
         get() = systemInfo.selinuxStatus == "Permissive"
