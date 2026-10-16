@@ -105,6 +105,18 @@ else
     check "install fails cleanly on non-root host (rc=${rc})" "$(echo "$out" | grep -q "创建目录失败" && echo 1 || echo 0)"
 fi
 
+# ── 9.5 CLI one-shot api (su -c channel, no daemon) ──────
+echo "[9.5/9] CLI one-shot api"
+rc=0
+out=$("$BIN" api version 2>&1) || rc=$?
+check "cli api version exits 0" "$([ "$rc" -eq 0 ] && echo 1 || echo 0)"
+check "cli api version JSON" "$(echo "$out" | grep -q "server_version" && echo 1 || echo 0)"
+out=$("$BIN" api detect 2>&1)
+check "cli api detect JSON" "$(echo "$out" | grep -q "status" && echo 1 || echo 0)"
+rc=0
+"$BIN" api >/dev/null 2>&1 || rc=$?
+check "cli api missing action rc=2" "$([ "$rc" -eq 2 ] && echo 1 || echo 0)"
+
 # ── 9. CLI dispatch: debug entry (master-switch gated) ───
 echo "[9/9] CLI dispatch: debug"
 rc=0

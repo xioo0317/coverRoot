@@ -40,6 +40,9 @@ object LocalApiClient {
     /** 后端调试通道（文件 Unix socket，与 router.cpp kDefaultSock 一致） */
     private const val FILE_SOCKET = "/data/local/tmp/local_api.sock"
 
+    /** su CLI 通道使用的后端二进制路径（install.sh 的安装位置） */
+    private const val CLI_BIN = "/data/adb/local_api/local_api"
+
     /** 连接 / 读写超时（毫秒） */
     private const val SO_TIMEOUT_MS = 5_000
 
@@ -60,14 +63,59 @@ object LocalApiClient {
         data class Unreachable(val reason: String) : ApiResult()
     }
 
-    /** 执行一个 action。对应后端协议: POST / {"action":"..."}。 */
+    /**
+     * 执行一个 action。通道优先级：
+     * 1. su CLI（`su -c local_api api <action>`）——不依赖 daemon 与 SELinux
+     *    connectto 规则，任何 root 方案都能通（su 链路本身已被 root 授权）；
+     * 2. abstract socket（需 daemon 常驻 + SELinux 放行）；
+     * 3. 文件 socket（调试通道）。
+     */
     suspend fun executeAction(action: String): ApiResult = withContext(Dispatchers.IO) {
-        request("POST", "/", "{\"action\":\"$action\"}")
+        val diag = StringBuilder()
+        requestViaSuCli(action, diag)?.let { return@withContext it }
+        request("POST", "/", "{\"action\":\"$action\"}", diag)
     }
 
-    /** 获取后端调试信息。对应后端协议: GET /debug。 */
+    /** 获取后端调试信息。通道优先级同 [executeAction]。 */
     suspend fun fetchDebugInfo(): ApiResult = withContext(Dispatchers.IO) {
-        request("GET", "/debug", null)
+        val diag = StringBuilder()
+        requestViaSuCli("debug", diag)?.let { return@withContext it }
+        request("GET", "/debug", null, diag)
+    }
+
+    // ------------------------------------------------------------------
+    // su CLI 通道（v1.17.0 新增主通道）
+    // ------------------------------------------------------------------
+
+    /**
+     * 通过 `su -c` 直接执行后端 CLI（单次进程，无 daemon）。
+     * 成功返回 [ApiResult.Success]；任何失败返回 null 并把原因写入 diag。
+     */
+    private fun requestViaSuCli(action: String, diag: StringBuilder): ApiResult? {
+        val quoted = "'$CLI_BIN' api '$action'"
+        return try {
+            val proc = ProcessBuilder("su", "-c", quoted).start()
+            val out = proc.inputStream.bufferedReader().readText().trim()
+            val err = proc.errorStream.bufferedReader().readText().trim()
+            val rc = proc.waitFor()
+            if (rc == 0 && out.isNotEmpty()) {
+                try {
+                    ApiResult.Success(JSONObject(out))
+                } catch (e: Exception) {
+                    diag.append("su CLI: 响应不是 JSON (${e.message})\n")
+                    null
+                }
+            } else {
+                // 127 = su 不存在/未授权，其余为后端 CLI 退出码
+                diag.append("su CLI: exit $rc")
+                if (err.isNotBlank()) diag.append(" stderr: ").append(err.take(120))
+                diag.append('\n')
+                null
+            }
+        } catch (e: Exception) {
+            diag.append("su CLI: 启动失败 ${e.message ?: e.javaClass.simpleName}\n")
+            null
+        }
     }
 
     // ------------------------------------------------------------------
@@ -75,15 +123,19 @@ object LocalApiClient {
     // ------------------------------------------------------------------
 
     /** 依次尝试抽象 socket（生产主通道）-> 文件 socket（调试通道）。 */
-    private fun request(method: String, path: String, body: String?): ApiResult {
-        val diag = StringBuilder()
+    private fun request(
+        method: String,
+        path: String,
+        body: String?,
+        diag: StringBuilder = StringBuilder(),
+    ): ApiResult {
         for ((name, abstract) in listOf(ABSTRACT_SOCKET to true, FILE_SOCKET to false)) {
             val result = exchangeWithAuth(name, abstract, method, path, body, diag)
             if (result != null) return result // 通道可达（含业务错误），直接返回
             diag.append('\n')
         }
         return ApiResult.Unreachable(
-            "无法连接后端服务（两条通道均失败）\n$diag"
+            "无法连接后端服务（su CLI / @local_api / 文件 sock 均失败）\n$diag"
         )
     }
 

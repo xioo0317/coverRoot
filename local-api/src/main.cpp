@@ -20,9 +20,11 @@
 #include "debug.hpp"
 #include "install.hpp"
 #include "router.hpp"
+#include "tools.hpp"
 #include "version.hpp"
 
 #include <cstdio>
+#include <iostream>
 #include <string>
 
 int main(int argc, char* argv[]) {
@@ -43,6 +45,17 @@ int main(int argc, char* argv[]) {
         // `local_api debug <sub>` — CLI debug entry, master-switch gated.
         return debug::run(argc > 2 ? argv[2] : "",
                           argc > 3 ? argv[3] : "");
+    } else if (cmd == "api") {
+        // `local_api api <action>` — one-shot JSON action over stdout.
+        // The manager's su -c channel runs this directly: no daemon, no
+        // sockets, no SELinux connectto rules — works with any root layout.
+        const std::string action = argc > 2 ? argv[2] : "";
+        if (action.empty()) {
+            std::cout << R"({"status":"error","error":"missing action"})" << std::endl;
+            return 2;
+        }
+        std::cout << tools::execute(action) << std::endl;
+        return 0;
     } else {
         // `local_api router` / no argument / anything else —
         // start the long-running web service.

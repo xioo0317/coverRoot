@@ -40,6 +40,15 @@ jobs:
           LOCAL_API_SOCK=@local_api-test bash local-api/test_api.sh
           pkill -x local_api || true
 
+      # The su CLI channel is the manager's primary path since v1.17.0:
+      # one-shot process, no daemon, no SELinux connectto rules needed.
+      - name: Smoke test (su CLI one-shot api)
+        run: |
+          ./local-api/build/local_api api version | grep -q server_version
+          ./local-api/build/local_api api detect | grep -q '"status"'
+          ./local-api/build/local_api api >/dev/null 2>&1 && (echo "✗ missing action should fail"; exit 1) || test $? -eq 2
+          echo "✓ su CLI one-shot api works"
+
       - name: Build local_api (android arm64)
         run: |
           cmake -S local-api -B local-api/build-android \
@@ -122,6 +131,11 @@ jobs:
             uninstall.sh                    uninstaller (daemon + autostart module)
             coverRoot-debug.apk             manager app (debug)
             coverRoot-release-unsigned.apk  manager app (release, unsigned)
+
+          Manager connectivity (v1.17.0+):
+            The app prefers the su CLI channel (su -c local_api api <action>),
+            which needs no daemon and no SELinux socket rules. The abstract
+            socket daemon remains available as a fallback.
 
           Deploy (recommended, one command):
             1. Push the whole bundle folder to the device, e.g. /data/local/tmp/coverRoot

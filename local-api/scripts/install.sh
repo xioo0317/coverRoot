@@ -4,7 +4,7 @@
 # Keep local_api / install.sh / uninstall.sh in the same folder.
 #
 # VERSION must match local-api/include/version.hpp SERVER_VERSION.
-VERSION="1.16.4"
+VERSION="1.17.0"
 
 DIR=/data/adb/local_api
 MODDIR=/data/adb/modules/coverroot_localapi
@@ -72,8 +72,8 @@ mkdir -p "$MODDIR"
 cat > "$MODDIR/module.prop" <<'EOF'
 id=coverroot_localapi
 name=coverRoot Local API
-version=1.16.4
-versionCode=164
+version=1.17.0
+versionCode=170
 author=coverRoot
 description=Starts the coverRoot local_api daemon on boot.
 EOF
