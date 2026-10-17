@@ -57,8 +57,20 @@ int main(int argc, char* argv[]) {
         std::cout << tools::execute(action) << std::endl;
         return 0;
     } else {
-        // `local_api router` / no argument / anything else —
-        // start the long-running web service.
-        return router::run(argc > 2 ? argv[2] : "");
+        // `local_api router [endpoint] [--tcp <port>]` —
+        // start the long-running web service. --tcp opens a loopback TCP
+        // listener (mandatory ECDSA handshake) so untrusted apps can reach
+        // the daemon without su and without SELinux connectto rules.
+        std::string ep;
+        uint16_t tcp_port = 0;
+        for (int i = 2; i < argc; ++i) {
+            const std::string a = argv[i];
+            if (a == "--tcp" && i + 1 < argc) {
+                tcp_port = static_cast<uint16_t>(std::stoi(argv[++i]));
+            } else if (ep.empty()) {
+                ep = a;
+            }
+        }
+        return router::run(ep, tcp_port);
     }
 }

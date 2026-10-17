@@ -43,6 +43,15 @@ object LocalApiClient {
     /** su CLI 通道使用的后端二进制路径（install.sh 的安装位置） */
     private const val CLI_BIN = "/data/adb/local_api/local_api"
 
+    /**
+     * TCP 免授权通道：daemon 以 root 监听 127.0.0.1 的回环端口（router --tcp），
+     * app 用普通 INTERNET 权限即可连接，无需 su 授权、无 SELinux connectto
+     * 依赖。安全由强制 ECDSA 握手保证（私钥在 app 私有目录）。
+     */
+    private const val TCP_HOST = "127.0.0.1"
+    private const val TCP_PORT = 28081
+    private const val TCP_CONNECT_TIMEOUT_MS = 3_000
+
     /** 连接 / 读写超时（毫秒） */
     private const val SO_TIMEOUT_MS = 5_000
 
@@ -73,6 +82,8 @@ object LocalApiClient {
     suspend fun executeAction(action: String): ApiResult = withContext(Dispatchers.IO) {
         val diag = StringBuilder()
         requestViaSuCli(action, diag)?.let { return@withContext it }
+        requestViaTcp("POST", "/", "{\"action\":\"$action\"}", diag)
+            ?.let { return@withContext it }
         request("POST", "/", "{\"action\":\"$action\"}", diag)
     }
 
@@ -80,7 +91,38 @@ object LocalApiClient {
     suspend fun fetchDebugInfo(): ApiResult = withContext(Dispatchers.IO) {
         val diag = StringBuilder()
         requestViaSuCli("debug", diag)?.let { return@withContext it }
+        requestViaTcp("GET", "/debug", null, diag)?.let { return@withContext it }
         request("GET", "/debug", null, diag)
+    }
+
+    // ------------------------------------------------------------------
+    // TCP 免授权通道（v1.18.0）
+    // ------------------------------------------------------------------
+
+    /** 通过 127.0.0.1 回环 TCP 直连 daemon；任何失败返回 null 并写 diag。 */
+    private fun requestViaTcp(
+        method: String,
+        path: String,
+        body: String?,
+        diag: StringBuilder,
+    ): ApiResult? {
+        val socket = java.net.Socket()
+        try {
+            socket.soTimeout = SO_TIMEOUT_MS
+            socket.connect(java.net.InetSocketAddress(TCP_HOST, TCP_PORT), TCP_CONNECT_TIMEOUT_MS)
+            return runSession(
+                method, path, body,
+                socket.getInputStream(), socket.getOutputStream(),
+            ) { socket.soTimeout = it }
+        } catch (e: IOException) {
+            diag.append("tcp $TCP_HOST:$TCP_PORT: ${e.message ?: "I/O error"}\n")
+            return null
+        } catch (e: Exception) {
+            diag.append("tcp $TCP_HOST:$TCP_PORT: ${e.message ?: e.javaClass.simpleName}\n")
+            return null
+        } finally {
+            runCatching { socket.close() }
+        }
     }
 
     // ------------------------------------------------------------------
@@ -135,14 +177,66 @@ object LocalApiClient {
             diag.append('\n')
         }
         return ApiResult.Unreachable(
-            "无法连接后端服务（su CLI / @local_api / 文件 sock 均失败）\n$diag"
+            "无法连接后端服务（su CLI / TCP / @local_api / 文件 sock 均失败）\n$diag"
         )
     }
 
     /**
-     * 单连接上的完整会话：握手探测 -> （必要时签名认证）-> 业务请求。
-     * 返回 null 表示通道不可达（连接/IO 失败，调用方尝试下一通道）。
+     * 已建连通道上的完整会话：握手探测 -> （必要时签名认证）-> 业务请求。
+     * UDS（LocalSocket）与 TCP（java.net.Socket）共用，认证语义由服务端决定。
      */
+    private fun runSession(
+        method: String,
+        path: String,
+        body: String?,
+        input: java.io.InputStream,
+        output: java.io.OutputStream,
+        setTimeoutMs: (Int) -> Unit,
+    ): ApiResult {
+        // ---- 阶段 1: 握手探测 ----
+        // need_auth 的服务端在 accept 后立刻发送 401+challenge；
+        // 免握手的服务端保持沉默，读超时即视为免握手并复用该连接。
+        setTimeoutMs(HANDSHAKE_PROBE_TIMEOUT_MS)
+        val probe = try {
+            readResponse(input)
+        } catch (e: IOException) {
+            null
+        } finally {
+            setTimeoutMs(SO_TIMEOUT_MS)
+        }
+        if (probe != null) {
+            val (probeCode, probeBody) = probe
+            val challenge = runCatching { JSONObject(probeBody).optString("challenge", "") }
+                .getOrDefault("")
+            if (probeCode == 401 && challenge.isNotEmpty()) {
+                // 正常握手路径：签名并认证
+                val auth = handshake(output, input, challenge)
+                if (auth != null) return auth // 握手被拒，无需尝试下一通道
+            } else {
+                // 主动到达的响应不是 challenge（异常形态），按普通响应交付
+                return parseResponse(probeCode, probeBody)
+            }
+        }
+
+        // ---- 阶段 2: 业务请求（keep-alive，已认证或免握手） ----
+        writeRequest(output, method, path, body)
+        var (code, payload) = readResponse(input)
+        if (code == 401) {
+            // 极端情况：认证态在服务端被重置，补一次握手后重试业务请求
+            val challenge = runCatching { JSONObject(payload).optString("challenge", "") }
+                .getOrDefault("")
+            if (challenge.isEmpty()) return parseResponse(code, payload)
+            val auth = handshake(output, input, challenge)
+            if (auth != null) return auth
+            writeRequest(output, method, path, body)
+            val retry = readResponse(input)
+            code = retry.first
+            payload = retry.second
+        }
+        return parseResponse(code, payload)
+    }
+
+    /** UDS 通道：建立 LocalSocket 连接后走 [runSession]。 */
     private fun exchangeWithAuth(
         socketName: String,
         abstract: Boolean,
@@ -160,50 +254,10 @@ object LocalApiClient {
                 LocalSocketAddress(socketName, LocalSocketAddress.Namespace.FILESYSTEM)
             }
             socket.connect(address)
-            val output = socket.outputStream
-            val input = socket.inputStream
-
-            // ---- 阶段 1: 握手探测 ----
-            // need_auth 的服务端在 accept 后立刻发送 401+challenge；
-            // 免握手的服务端保持沉默，读超时即视为免握手并复用该连接。
-            socket.soTimeout = HANDSHAKE_PROBE_TIMEOUT_MS
-            val probe = try {
-                readResponse(input)
-            } catch (e: IOException) {
-                null
-            } finally {
-                socket.soTimeout = SO_TIMEOUT_MS
-            }
-            if (probe != null) {
-                val (probeCode, probeBody) = probe
-                val challenge = runCatching { JSONObject(probeBody).optString("challenge", "") }
-                    .getOrDefault("")
-                if (probeCode == 401 && challenge.isNotEmpty()) {
-                    // 正常握手路径：签名并认证
-                    val auth = handshake(output, input, challenge)
-                    if (auth != null) return auth // 握手被拒，无需尝试下一通道
-                } else {
-                    // 主动到达的响应不是 challenge（异常形态），按普通响应交付
-                    return parseResponse(probeCode, probeBody)
-                }
-            }
-
-            // ---- 阶段 2: 业务请求（keep-alive，已认证或免握手） ----
-            writeRequest(output, method, path, body)
-            var (code, payload) = readResponse(input)
-            if (code == 401) {
-                // 极端情况：认证态在服务端被重置，补一次握手后重试业务请求
-                val challenge = runCatching { JSONObject(payload).optString("challenge", "") }
-                    .getOrDefault("")
-                if (challenge.isEmpty()) return parseResponse(code, payload)
-                val auth = handshake(output, input, challenge)
-                if (auth != null) return auth
-                writeRequest(output, method, path, body)
-                val retry = readResponse(input)
-                code = retry.first
-                payload = retry.second
-            }
-            return parseResponse(code, payload)
+            return runSession(
+                method, path, body,
+                socket.inputStream, socket.outputStream,
+            ) { socket.soTimeout = it }
         } catch (e: IOException) {
             // 通道不可达；把底层原因（如 Permission denied / Connection refused）
             // 带回给调用方做诊断，然后尝试下一通道。

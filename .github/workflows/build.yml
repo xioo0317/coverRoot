@@ -49,6 +49,15 @@ jobs:
           ./local-api/build/local_api api >/dev/null 2>&1 && (echo "✗ missing action should fail"; exit 1) || test $? -eq 2
           echo "✓ su CLI one-shot api works"
 
+      # TCP loopback channel (v1.18.0): mandatory-ECDSA fallback that works
+      # without su grants or SELinux connectto rules.
+      - name: Smoke test (TCP loopback)
+        run: |
+          (LOCAL_API_ALLOW_ALL=1 ./local-api/build/local_api router /tmp/tcp-smoke.sock --tcp 28081 > /tmp/api-tcp.log 2>&1 &)
+          sleep 2
+          LOCAL_API_TCP=28081 bash local-api/test_api.sh
+          pkill -x local_api || true
+
       - name: Build local_api (android arm64)
         run: |
           cmake -S local-api -B local-api/build-android \
@@ -132,10 +141,11 @@ jobs:
             coverRoot-debug.apk             manager app (debug)
             coverRoot-release-unsigned.apk  manager app (release, unsigned)
 
-          Manager connectivity (v1.17.0+):
-            The app prefers the su CLI channel (su -c local_api api <action>),
-            which needs no daemon and no SELinux socket rules. The abstract
-            socket daemon remains available as a fallback.
+          Manager connectivity (v1.18.0+):
+            Channel priority: su CLI (no daemon needed) -> TCP 127.0.0.1:28081
+            (mandatory ECDSA handshake, no su grant / no SELinux rules needed)
+            -> abstract socket -> file socket. The daemon opens TCP when
+            started with '--tcp 28081' (install.sh does this automatically).
 
           Deploy (recommended, one command):
             1. Push the whole bundle folder to the device, e.g. /data/local/tmp/coverRoot

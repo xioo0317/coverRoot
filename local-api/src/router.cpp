@@ -36,6 +36,8 @@
 #include <sys/stat.h>
 #include <sys/un.h>
 #include <poll.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <signal.h>
@@ -61,6 +63,10 @@ namespace {
 
 constexpr const char* kAbstractName = "@local_api";
 constexpr const char* kDefaultSock  = "/data/local/tmp/local_api.sock";
+// Loopback TCP endpoint: reachable by untrusted apps without any SELinux
+// connectto rule or su grant (plain INTERNET permission). Security rests on
+// the mandatory ECDSA handshake (see serve_client's tcp branch).
+constexpr uint16_t kDefaultTcpPort = 28081;
 constexpr const char* kAllowFile    = "/data/adb/coverroot/allowed_uids";
 constexpr size_t kMaxHead = 32 * 1024;
 constexpr size_t kMaxBody = 1024 * 1024;
@@ -314,9 +320,16 @@ static void apply_sepolicy_allowance() {
 #endif
 
 // One connection = one client lifecycle (auth once, then keep-alive requests).
-void serve_client(int fd) {
+void serve_client(int fd, bool is_tcp = false) {
+    const bool trust_all = [] {
+        const char* o = ::getenv("LOCAL_API_ALLOW_ALL");
+        return o != nullptr && o[0] == '1';
+    }();
+    // TCP peers carry no PEERCRED identity: there is no uid to whitelist, so
+    // every loopback connection must prove possession of the ECDSA private
+    // key below. UDS keeps the kernel-verified uid shortcut for root peers.
     uid_t uid = 0;
-    if (!peer_allowed(fd, uid)) {
+    if (!is_tcp && !peer_allowed(fd, uid)) {
         respond(fd, 403, json{{"status","error"},
                               {"error","peer not allowed"},
                               {"peer_uid", uid}}.dump());
@@ -326,11 +339,7 @@ void serve_client(int fd) {
 
     // Layer 2: non-root peers must complete the ECDSA challenge handshake.
     // (LOCAL_API_ALLOW_ALL=1 test mode skips it along with the uid check.)
-    const bool trust_all = [] {
-        const char* o = ::getenv("LOCAL_API_ALLOW_ALL");
-        return o != nullptr && o[0] == '1';
-    }();
-    const bool need_auth = (uid != 0) && !trust_all;
+    const bool need_auth = is_tcp ? !trust_all : (uid != 0) && !trust_all;
     bool authenticated = !need_auth;
     std::string challenge;
     if (need_auth) {
@@ -438,9 +447,42 @@ int make_listener(const std::string& spec) {
     return fd;
 }
 
+// Loopback-only TCP listener. Never binds a wildcard address: the daemon must
+// stay unreachable from other machines.
+int make_tcp_listener(uint16_t port) {
+    const int fd = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) return -1;
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port = htons(port);
+    if (::bind(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0 ||
+        ::listen(fd, 8) != 0) {
+        std::cerr << "tcp bind/listen failed: 127.0.0.1:" << port
+                  << " errno=" << errno << "\n";
+        ::close(fd);
+        return -1;
+    }
+    return fd;
+}
+
+// A live TCP listener means another daemon already owns the port.
+bool probe_tcp_live(uint16_t port) {
+    const int fd = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) return false;
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port = htons(port);
+    const bool live =
+        ::connect(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == 0;
+    ::close(fd);
+    return live;
+}
+
 } // namespace
 
-int run(const std::string& sock_arg) {
+int run(const std::string& sock_arg, uint16_t tcp_port) {
     ::signal(SIGPIPE, SIG_IGN);
 #ifdef __ANDROID__
     apply_sepolicy_allowance();
@@ -465,14 +507,33 @@ int run(const std::string& sock_arg) {
                      " pkill -x local_api" << std::endl;
         return 0;
     }
+    if (tcp_port != 0 && probe_tcp_live(tcp_port)) {
+        std::cerr << local_api::APP_NAME << ": already running on tcp 127.0.0.1:"
+                  << tcp_port << " — not starting a second copy. Kill it first"
+                     " with: pkill -x local_api" << std::endl;
+        return 0;
+    }
 
+    // fd -> is_tcp map for the accept loop (serve_client auth branch differs).
+    std::vector<std::pair<int, bool>> listeners;
     std::vector<pollfd> pfds;
     for (const auto& ep : endpoints) {
         const int fd = make_listener(ep);
         if (fd < 0) continue;
+        listeners.emplace_back(fd, false);
         pfds.push_back({fd, POLLIN, 0});
         std::cout << local_api::APP_NAME << " v" << local_api::SERVER_VERSION
                   << " listening on " << ep << std::endl;
+    }
+    if (tcp_port != 0) {
+        const int fd = make_tcp_listener(tcp_port);
+        if (fd >= 0) {
+            listeners.emplace_back(fd, true);
+            pfds.push_back({fd, POLLIN, 0});
+            std::cout << local_api::APP_NAME << " v" << local_api::SERVER_VERSION
+                      << " listening on tcp 127.0.0.1:" << tcp_port
+                      << " (ECDSA handshake mandatory)" << std::endl;
+        }
     }
     if (pfds.empty()) {
         std::cerr << "no listen socket available\n";
@@ -504,6 +565,25 @@ int run(const std::string& sock_arg) {
         ::close(cfd);
     }
 
+    // TCP self-check: a loopback connect proves the port is actually serving.
+    if (tcp_port != 0) {
+        const int cfd = ::socket(AF_INET, SOCK_STREAM, 0);
+        if (cfd >= 0) {
+            sockaddr_in sa{};
+            sa.sin_family = AF_INET;
+            sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+            sa.sin_port = htons(tcp_port);
+            if (::connect(cfd, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)) == 0) {
+                std::cout << local_api::APP_NAME << ": tcp self-check ok (127.0.0.1:"
+                          << tcp_port << ")" << std::endl;
+            } else {
+                std::cerr << local_api::APP_NAME << ": tcp self-check FAILED: errno="
+                          << errno << std::endl;
+            }
+            ::close(cfd);
+        }
+    }
+
     for (;;) {
         if (::poll(pfds.data(), static_cast<nfds_t>(pfds.size()), -1) < 0) {
             if (errno == EINTR) continue;
@@ -512,7 +592,12 @@ int run(const std::string& sock_arg) {
         for (const auto& p : pfds) {
             if (p.revents & POLLIN) {
                 const int c = ::accept(p.fd, nullptr, nullptr);
-                if (c >= 0) serve_client(c);
+                if (c < 0) continue;
+                bool is_tcp = false;
+                for (const auto& l : listeners) {
+                    if (l.first == p.fd) { is_tcp = l.second; break; }
+                }
+                serve_client(c, is_tcp);
             }
         }
     }

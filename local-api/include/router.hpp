@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 namespace router {
@@ -16,6 +17,6 @@ namespace router {
 //   sock_arg "@x"   -> abstract socket only   (custom / test)
 //   sock_arg "path" -> file socket only      (test / adb debug)
 // Called once from main().
-int run(const std::string& sock_arg = "");
+int run(const std::string& sock_arg = "", uint16_t tcp_port = 0);
 
 } // namespace router

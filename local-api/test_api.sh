@@ -10,8 +10,12 @@ set -euo pipefail
 
 BASE_URL="http://localhost"
 SOCK="${LOCAL_API_SOCK:-/tmp/local_api.sock}"
-# Abstract sockets (spec starts with '@') need curl's --abstract-unix-socket.
-if [ "${SOCK#@}" != "$SOCK" ]; then
+# Abstract sockets (spec starts with '@') need curl's --abstract-unix-socket;
+# LOCAL_API_TCP=<port> switches the whole suite to the loopback TCP channel.
+if [ -n "${LOCAL_API_TCP:-}" ]; then
+    BASE_URL="http://127.0.0.1:${LOCAL_API_TCP}"
+    curl_cmd=(curl -s)
+elif [ "${SOCK#@}" != "$SOCK" ]; then
     curl_cmd=(curl -s --abstract-unix-socket "${SOCK#@}")
 else
     curl_cmd=(curl -s --unix-socket "$SOCK")

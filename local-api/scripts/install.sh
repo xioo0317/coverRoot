@@ -4,7 +4,7 @@
 # Keep local_api / install.sh / uninstall.sh in the same folder.
 #
 # VERSION must match local-api/include/version.hpp SERVER_VERSION.
-VERSION="1.17.0"
+VERSION="1.18.0"
 
 DIR=/data/adb/local_api
 MODDIR=/data/adb/modules/coverroot_localapi
@@ -56,7 +56,7 @@ say "installed: $DIR/local_api (v$VERSION)"
 # ---- 3. restart daemon ---------------------------------------------------
 # v1.16.4+ refuses to start a second copy over a live listener, so stop first.
 pkill -x local_api 2>/dev/null && say "stopped old daemon"
-nohup "$DIR/local_api" router @local_api >>"$DIR/daemon.log" 2>&1 &
+nohup "$DIR/local_api" router @local_api --tcp 28081 >>"$DIR/daemon.log" 2>&1 &
 sleep 1
 
 # ---- 4. verify -----------------------------------------------------------
@@ -72,8 +72,8 @@ mkdir -p "$MODDIR"
 cat > "$MODDIR/module.prop" <<'EOF'
 id=coverroot_localapi
 name=coverRoot Local API
-version=1.17.0
-versionCode=170
+version=1.18.0
+versionCode=180
 author=coverRoot
 description=Starts the coverRoot local_api daemon on boot.
 EOF
@@ -82,7 +82,7 @@ cat > "$MODDIR/service.sh" <<'EOF'
 # coverRoot local_api autostart (late_start service mode)
 (
     while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 2; done
-    exec /data/adb/local_api/local_api router @local_api >>/data/adb/local_api/daemon.log 2>&1
+    exec /data/adb/local_api/local_api router @local_api --tcp 28081 >>/data/adb/local_api/daemon.log 2>&1
 ) &
 EOF
 chmod 755 "$MODDIR/service.sh"
